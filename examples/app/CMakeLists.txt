@@ -1,4 +1,4 @@
-project (sandbox)
+project (app)
 
 include(${CMAKE_FRAMEWORK_DIR}/project/project.cmake)
 
@@ -7,26 +7,18 @@ include(${CMAKE_FRAMEWORK_DIR}/project/project.cmake)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set (SOURCEFILES
-  test.cpp
-  component.cpp
-  plugin/plugin_manager.cpp
-  plugin/plugin.cpp
-  plugin/plugin_interface.cpp
+  main.cpp
 )
 
 set (HEADERFILES
-  test.h
-  component.h
-  plugin/plugin_manager.h
-  plugin/plugin.h
-  plugin/plugin_interface.h
 )
 
 # --------------------- Dependencies -----------------------
 
-
+set(PROJECT_DEPS ${PROJECT_DEPS} sandbox)
+set(DEP_LIBS ${DEP_LIBS} sandbox dl)
 
 # --------------------- Executable -----------------------
 
-addStandardLibrary()
+addStandardExecutable()
 
