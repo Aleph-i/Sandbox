@@ -7,7 +7,7 @@ include(${CMAKE_FRAMEWORK_DIR}/project/project.cmake)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set (SOURCEFILES
-  test.cpp
+  entity.cpp
   component.cpp
   plugin/plugin_manager.cpp
   plugin/plugin.cpp
@@ -15,7 +15,7 @@ set (SOURCEFILES
 )
 
 set (HEADERFILES
-  test.h
+  entity.h
   component.h
   plugin/plugin_manager.h
   plugin/plugin.h

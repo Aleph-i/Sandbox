@@ -1,5 +1,3 @@
-#include "sandbox/test.h"
-
 #include <iostream>
 #include "sandbox/plugin/plugin_interface.h"
 #include "sandbox/interfaces/entity_component_interface.h"

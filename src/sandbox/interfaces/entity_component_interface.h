@@ -48,7 +48,7 @@ public:
                 return comp;
             }
         }
-        
+
         return NULL;
     }
 
