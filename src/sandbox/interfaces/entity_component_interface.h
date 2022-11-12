@@ -4,23 +4,25 @@
 #include <vector>
 #include "sandbox/plugin/plugin_interface.h"
 #include "sandbox/component.h"
+#include "sandbox/entity.h"
 
 namespace sandbox {
 
-class ComponentFactory {
+template <typename BASE>
+class ObjectFactory {
 public:
-    virtual ~ComponentFactory() {}
-    virtual Component* create(const std::string& typeName) = 0;
+    virtual ~ObjectFactory() {}
+    virtual BASE* create(const std::string& typeName) = 0;
 };
 
-template <typename T>
-class TypedComponentFactory : public ComponentFactory {
+template <typename T, typename BASE>
+class TypedObjectFactory : public ObjectFactory<BASE> {
 public:
-    TypedComponentFactory(const std::string& typeName) : typeName(typeName) {}
-    virtual ~TypedComponentFactory() {}
-    Component* create(const std::string& typeName) { 
+    TypedObjectFactory(const std::string& typeName) : typeName(typeName) {}
+    virtual ~TypedObjectFactory() {}
+    BASE* create(const std::string& typeName) { 
         if (typeName == this->typeName) {
-            return new T(); 
+            return new T();
         }
         else {
             return NULL;
@@ -30,22 +32,21 @@ private:
     std::string typeName;
 };
 
-class EntityComponentInterface : public PluginInterface {
+template <typename BASE>
+class CompositeObjectFactory {
 public:
-    virtual ~EntityComponentInterface() {}
+    virtual ~CompositeObjectFactory() {}
 
     template <typename T>
-    void addType(const std::string& typeName) { addComponentFactory(new TypedComponentFactory<T>(typeName)); }
-
-    void addComponentFactory(ComponentFactory* factory) {
-        componentFactories.push_back(factory);
+    void addType(const std::string& typeName) { addFactory(new TypedObjectFactory<T, BASE>(typeName)); }
+    void addFactory(ObjectFactory<BASE>* factory) {
+        factories.push_back(factory);
     }
-
-    Component* createComponent(const std::string& typeName) {
-        for (int i = 0; i < componentFactories.size(); i++) {
-            Component* comp = componentFactories[i]->create(typeName);
-            if (comp) {
-                return comp;
+    virtual BASE* create(const std::string& typeName) {
+        for (int i = 0; i < factories.size(); i++) {
+            BASE* item = factories[i]->create(typeName);
+            if (item) {
+                return item;
             }
         }
 
@@ -53,7 +54,30 @@ public:
     }
 
 private:
-    std::vector<ComponentFactory*> componentFactories;
+    std::vector< ObjectFactory<BASE>* > factories;
+};
+
+typedef ObjectFactory<Component> ComponentFactory;
+typedef ObjectFactory<Task> TaskFactory;
+
+class EntityComponentInterface : public PluginInterface {
+public:
+    virtual ~EntityComponentInterface() {}
+
+    Component* createComponent(const std::string& typeName) {
+        return componentFactory.create(typeName);
+    }
+
+    Task* createTask(const std::string& typeName) {
+        return taskFactory.create(typeName);
+    }
+
+    CompositeObjectFactory<Component>& getComponentFactory() { return componentFactory; }
+    CompositeObjectFactory<Task>& getTaskFactory() { return taskFactory; }
+
+private:
+    CompositeObjectFactory<Component> componentFactory;
+    CompositeObjectFactory<Task> taskFactory;
 };
 
 }

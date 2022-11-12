@@ -9,24 +9,6 @@ class TestPluginInterface : public sandbox::PluginInterface {
 public:
 };
 
-void printEntity(sandbox::Entity& entity, std::string indent = "") {
-    using namespace sandbox;
-    std::cout << indent << &entity << "(" << entity.getParent() << ")" << std::endl;
-    const std::vector<Component*>& components = entity.getComponents();
-    for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
-        if (*it != NULL) {
-            std::cout << indent << "- " << *it << "(" << (*it)->getEntity() << ")" << std::endl;
-        }
-    }
-
-    const std::vector<Entity*>& entities = entity.getChildren();
-    for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++) {
-        if (*it != NULL) {
-            printEntity(**it, indent + "\t");
-        }
-    }
-}
-
 int main(int argc, char *argv[]) {
     std::cout << "This is a test." << std::endl;
 
@@ -38,17 +20,24 @@ int main(int argc, char *argv[]) {
     pm.addPluginInterface(ec);
     pm.loadPlugin("lib/libtest.so");
 
-    Entity root;
+    Entity root("Root");
     root.addComponent(ec->createComponent("TestComponent"));
-    root.addComponent(ec->createComponent("TestComponent"));
-    Entity& next = root.addChild(new Entity());
+    Component* console = ec->createComponent("ConsoleDisplay");
+    root.addComponent(console);
+    Entity& next = root.addChild(new Entity("Next"));
     next.addComponent(ec->createComponent("TestComponent"));
-    Entity& next2 = root.addChild(new Entity());
-    printEntity(root);
+    Entity& next2 = root.addChild(new Entity("Next2"));
+    //printEntity(root);
     next.addChild(&next2);
 
-    printEntity(root);
+    //printEntity(root);
+    Task& print = *ec->createTask("PrintTask");
+    Task& render = *ec->createTask("RenderTask");
+    root.runTask(print);
+    next.runTask(print);
 
+    console->asType<Renderable>()->Render();
+    root.runTask(render);
 
     return 0;
 }

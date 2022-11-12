@@ -55,4 +55,30 @@ void Entity::removeChild(Entity* child) {
     }
 }
 
+void Entity::runTask(Task& task) {
+    TaskContext* context = task.createContext();
+    runTask(task, context);
+    delete context;
+}
+
+void Entity::runTask(Task& task, TaskContext* context) {
+    task.run(*this, context);
+}
+
+void RecursiveTask::run(Entity& entity, TaskContext* context) {
+        runEntity(entity, context);
+
+        if (context) {
+            context->push();
+        }
+        const std::vector<Entity*>& entities = entity.getChildren();
+        for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++) {
+            (*it)->runTask(*this, context);
+        }
+
+        if (context) {
+            context->pop();
+        }
+    }
+
 }
