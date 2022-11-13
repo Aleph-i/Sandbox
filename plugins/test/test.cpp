@@ -9,11 +9,11 @@ public:
     }
 };
 
-class ConsoleDisplay : public sandbox::Component, public sandbox::Renderable {
+class ConsoleDisplay : public sandbox::Component { //, public sandbox::Renderable {
 public:
     ConsoleDisplay() {
         addType<ConsoleDisplay>();
-        addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
+        //addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
     }
     
     void Render() {
@@ -66,7 +66,7 @@ public:
     }
 };
 
-class RenderTask : public sandbox::RecursiveTask {
+/*class RenderTask : public sandbox::RecursiveTask {
 public:
     void runEntity(sandbox::Entity& entity, sandbox::TaskContext* context) {
         using namespace sandbox;
@@ -78,7 +78,7 @@ public:
             }
         }
     }
-};
+};*/
 
 extern "C"
 {
@@ -87,10 +87,10 @@ extern "C"
 		std::cout << "Plugin Loaded." << std::endl;
         EntityComponentInterface* ec = dynamic_cast<EntityComponentInterface*>(interface);
         if (ec) {
-            ec->getComponentFactory().addType<TestComponent>("TestComponent");
-            ec->getComponentFactory().addType<ConsoleDisplay>("ConsoleDisplay");
-            ec->getTaskFactory().addType<PrintTask>("PrintTask");
-            ec->getTaskFactory().addType<RenderTask>("RenderTask");
+            ec->components().addType<TestComponent>("TestComponent");
+            ec->components().addType<ConsoleDisplay>("ConsoleDisplay");
+            ec->tasks().addType<PrintTask>("PrintTask");
+            //ec->tasks().addType<RenderTask>("RenderTask");
         }
 	}
 }

@@ -6,11 +6,11 @@
 
 namespace sandbox {
 
-class Renderable {
+/*class Renderable {
 public:
     virtual ~Renderable() {}
     virtual void Render() = 0;
-};
+};*/
 
 class Entity;
 
