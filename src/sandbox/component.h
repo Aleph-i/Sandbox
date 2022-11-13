@@ -3,14 +3,11 @@
 
 #include <typeinfo>
 #include <vector>
+#include <string>
+#include <map>
+#include "attribute.h"
 
 namespace sandbox {
-
-/*class Renderable {
-public:
-    virtual ~Renderable() {}
-    virtual void Render() = 0;
-};*/
 
 class Entity;
 
@@ -34,7 +31,7 @@ public:
 	}
 	virtual const std::vector<const std::type_info*>& getTypes() { return types; }
 
-    template<typename T>
+    template <typename T>
 	T* asType() {
         static const std::type_info& type = typeid(T);
         for (int i = 0; i < types.size(); i++) {
@@ -46,10 +43,18 @@ public:
         return NULL;
 	}
 
+    virtual Attribute& operator[](const std::string& name) {
+        return *attributes[name];
+    }
+
 protected:
     virtual void addType(const std::type_info& type, void* ptr) {
         types.push_back(&type);
         pointers.push_back(ptr);
+    }
+
+    virtual void addAttribute(Attribute* attribute) {
+        attributes[attribute->getName()] = attribute;
     }
 
 private:
@@ -57,6 +62,7 @@ private:
     Entity* entity;
     std::vector<const std::type_info*> types;
     std::vector<void*> pointers;
+    std::map<std::string, Attribute*> attributes;
 };
 
 }
