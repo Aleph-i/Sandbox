@@ -24,6 +24,7 @@ add_external(glfw3
   DEBUG_POSTFIX d
 )
 include_directories(${CMAKE_FRAMEWORK_DIR}/external/glfw3/build/install/include)
+include_directories(${CMAKE_FRAMEWORK_DIR}/external/glfw3/src/deps)
 
 set(PROJECT_DEPS ${PROJECT_DEPS} sandbox)
 set(DEP_LIBS ${DEP_LIBS} sandbox pthread)

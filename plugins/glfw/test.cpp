@@ -1,5 +1,8 @@
 #include <iostream>
 #include "sandbox/interfaces/entity_component_interface.h"
+
+#define GLAD_GL_IMPLEMENTATION
+#include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 class GLFWManager {
@@ -34,6 +37,12 @@ public:
     }
 
     void init() {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+        int version = gladLoadGL(glfwGetProcAddress);
+        printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
         window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
         if (!window) {
             // Window or OpenGL context creation failed
@@ -43,9 +52,18 @@ public:
 		glfwSetWindowSizeCallback(window, GLFWWindow::glfw_size_callback);
     	glfwSetCursorPosCallback(window, GLFWWindow::glfw_cursor_position_callback);
     	glfwSetMouseButtonCallback(window, GLFWWindow::glfw_mouse_button_callback);
+
+        glfwMakeContextCurrent(window);
         glfwSwapBuffers(window);
         glfwSwapInterval(1);
-        glfwPollEvents();
+    }
+
+    void swapBuffers() {
+        glfwSwapBuffers(window);
+    }
+
+    void makeCurrent() {
+        glfwMakeContextCurrent(window);
     }
 
 private:
@@ -98,7 +116,35 @@ public:
     }
 };
 
-class GLFWLoop : public sandbox::Task {
+class GLFWSwapBuffers : public sandbox::RecursiveTask {
+public:
+    void runEntity(sandbox::Entity& entity, sandbox::TaskContext* context) {
+        using namespace sandbox;
+        const std::vector<Component*>& components = entity.getComponents();
+        for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
+            GLFWWindow* window = (*it)->asType<GLFWWindow>();
+            if (window) {
+                window->swapBuffers();
+            }
+        }
+    }
+};
+
+class GLFWMakeCurrent : public sandbox::RecursiveTask {
+public:
+    void runEntity(sandbox::Entity& entity, sandbox::TaskContext* context) {
+        using namespace sandbox;
+        const std::vector<Component*>& components = entity.getComponents();
+        for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
+            GLFWWindow* window = (*it)->asType<GLFWWindow>();
+            if (window) {
+                window->makeCurrent();
+            }
+        }
+    }
+};
+
+class GLFWPollEvents : public sandbox::Task {
 public:
     void run(sandbox::Entity& entity, sandbox::TaskContext* context) {
         glfwPollEvents();
@@ -116,7 +162,9 @@ extern "C"
         if (ec) {
             ec->components().addType<GLFWWindow>("GLFWWindow");
             ec->tasks().addType<GLFWInitContext>("GLFWInitContext");
-            ec->tasks().addType<GLFWLoop>("GLFWLoop");
+            ec->tasks().addType<GLFWSwapBuffers>("GLFWSwapBuffers");
+            ec->tasks().addType<GLFWPollEvents>("GLFWPollEvents");
+            ec->tasks().addType<GLFWMakeCurrent>("GLFWMakeCurrent");
         }
 	}
 }

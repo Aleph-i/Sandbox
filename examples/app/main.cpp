@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     pm.addPluginInterface(ec);
     pm.loadPlugin("lib/libtest.so");
     pm.loadPlugin("lib/libglfw_sandbox.so");
+    pm.loadPlugin("lib/libopengl_sandbox.so");
 
     Entity root("Root");
     Entity& display = root.addChild(new Entity("Display"));
@@ -23,17 +24,33 @@ int main(int argc, char *argv[]) {
     Component& window = display.addComponent(ec->components().create("GLFWWindow"));
     window["width"].set<int>(700);
     window["title"].set<std::string>("Something else");
+    display.addComponent(ec->components().create("OpenGLTest"));
 
     Task& print = *ec->tasks().create("PrintTask");
     root.runTask(print);
 
     Task& initContext = *ec->tasks().create("GLFWInitContext");
     root.runTask(initContext);
-    Task& loop = *ec->tasks().create("GLFWLoop");
+    Task& swapBuffers = *ec->tasks().create("GLFWSwapBuffers");
+    Task& pollEvents = *ec->tasks().create("GLFWPollEvents");
+    Task& makeCurrent = *ec->tasks().create("GLFWMakeCurrent");
+    Task& init = *ec->tasks().create("OpenGLInit");
+    Task& run = *ec->tasks().create("OpenGLRun");
+
+        root.runTask(makeCurrent);
+        root.runTask(init);
+        root.runTask(run);
+        root.runTask(swapBuffers);
+        root.runTask(pollEvents);
 
     while (true) {
-        usleep(100000);
-        root.runTask(loop);
+        //usleep(100000);
+
+        root.runTask(makeCurrent);
+        root.runTask(run);
+        root.runTask(swapBuffers);
+        root.runTask(pollEvents);
+
         std::cout << window["width"].get<int>() << std::endl;
         //std::cout << "step" << std::endl;
     }
