@@ -40,9 +40,7 @@ public:
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-        int version = gladLoadGL(glfwGetProcAddress);
-        printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+        
         window = glfwCreateWindow(width, height, title.c_str(), NULL, NULL);
         if (!window) {
             // Window or OpenGL context creation failed
@@ -54,6 +52,9 @@ public:
     	glfwSetMouseButtonCallback(window, GLFWWindow::glfw_mouse_button_callback);
 
         glfwMakeContextCurrent(window);
+        int version = gladLoadGL(glfwGetProcAddress);
+        printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
+
         glfwSwapBuffers(window);
         glfwSwapInterval(1);
     }
