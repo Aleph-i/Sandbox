@@ -132,26 +132,26 @@ extern "C"
 
 typedef struct Vertex
 {
-    vec2 pos;
+    vec3 pos;
     vec3 col;
 } Vertex;
 
 static const Vertex vertices[3] =
 {
-    { { -0.6f, -0.4f }, { 1.f, 0.f, 0.f } },
-    { {  0.6f, -0.4f }, { 0.f, 1.f, 0.f } },
-    { {   0.f,  0.6f }, { 0.f, 0.f, 1.f } }
+    { { -0.6f, -0.4f, 0.0f }, { 1.f, 0.f, 0.f } },
+    { {  0.6f, -0.4f, 0.0f }, { 0.f, 1.f, 0.f } },
+    { {   0.f,  0.6f, 0.0f }, { 0.f, 0.f, 1.f } }
 };
 
 static const char* vertex_shader_text =
 "#version 330\n"
 "uniform mat4 MVP;\n"
 "in vec3 vCol;\n"
-"in vec2 vPos;\n"
+"in vec3 vPos;\n"
 "out vec3 color;\n"
 "void main()\n"
 "{\n"
-"    gl_Position = MVP * vec4(vPos, 0.0, 1.0);\n"
+"    gl_Position = MVP * vec4(vPos, 1.0);\n"
 "    color = vCol;\n"
 "}\n";
 
@@ -206,7 +206,7 @@ public:
         glGenVertexArrays(1, &vertex_array);
         glBindVertexArray(vertex_array);
         glEnableVertexAttribArray(vpos_location);
-        glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE,
+        glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
                             sizeof(Vertex), (void*) offsetof(Vertex, pos));
         glEnableVertexAttribArray(vcol_location);
         glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
@@ -228,6 +228,8 @@ public:
         mat4x4 m, p, mvp;
         mat4x4_identity(m);
         mat4x4_rotate_Z(m, m, (float) glfwGetTime());
+        //glm::radians(45.0f), aspectRatio, 0.1f, 100.0f
+        //mat4x4_perspective(p, 0.39269875, ratio, 0.1f, 100.0f);
         mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
         mat4x4_mul(mvp, p, m);
 

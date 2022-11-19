@@ -57,7 +57,10 @@ protected:
         attributes[attribute->getName()] = attribute;
     }
 
+    virtual void update() {}
+
 private:
+    void updateComponent();
     void setEntity(Entity& entity);
     Entity* entity;
     std::vector<const std::type_info*> types;

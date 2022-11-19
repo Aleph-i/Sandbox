@@ -65,20 +65,32 @@ void Entity::runTask(Task& task, TaskContext* context) {
     task.run(*this, context);
 }
 
-void RecursiveTask::run(Entity& entity, TaskContext* context) {
-        runEntity(entity, context);
-
-        if (context) {
-            context->push();
-        }
-        const std::vector<Entity*>& entities = entity.getChildren();
-        for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++) {
-            (*it)->runTask(*this, context);
-        }
-
-        if (context) {
-            context->pop();
-        }
+void Entity::update() {
+    const std::vector<Component*>& components = getComponents();
+    for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
+        (*it)->updateComponent();
     }
+
+    const std::vector<Entity*>& entities = getChildren();
+    for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++) {
+        (*it)->update();
+    }
+}
+
+void RecursiveTask::run(Entity& entity, TaskContext* context) {
+    runEntity(entity, context);
+
+    if (context) {
+        context->push();
+    }
+    const std::vector<Entity*>& entities = entity.getChildren();
+    for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++) {
+        (*it)->runTask(*this, context);
+    }
+
+    if (context) {
+        context->pop();
+    }
+}
 
 }

@@ -44,8 +44,10 @@ public:
     void runTask(Task& task);
     void runTask(Task& task, TaskContext* context);
 
-    Entity* getParent() { return parent; }
-    const std::string& getName() { return name; }
+    Entity* getParent() const { return parent; }
+    const std::string& getName() const { return name; }
+
+    void update();
 
 private:
     void removeComponent(Component* component);
@@ -56,6 +58,23 @@ private:
     std::vector<Entity*> children;
     Entity* parent;
     std::string name;
+};
+
+template <typename T>
+class TypedRecursiveTask : public sandbox::RecursiveTask {
+public:
+    void runEntity(sandbox::Entity& entity, sandbox::TaskContext* context) {
+        using namespace sandbox;
+        const std::vector<Component*>& components = entity.getComponents();
+        for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
+            T* component = (*it)->asType<T>();
+            if (component) {
+                runComponent(*component, context);
+            }
+        }
+    }
+
+    virtual void runComponent(T& component, sandbox::TaskContext* context) = 0;
 };
 
 }
