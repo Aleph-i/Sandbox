@@ -5,6 +5,7 @@
 #include "sandbox/interfaces/entity_component_interface.h"
 #include "sandbox/entity.h"
 #include <unistd.h>
+#include "sandbox_threading/async_update.h"
 
 int main(int argc, char *argv[]) {
     std::cout << "This is a test." << std::endl;
@@ -20,6 +21,7 @@ int main(int argc, char *argv[]) {
     pm.loadPlugin("lib/libstb_sandbox.so");
     pm.loadPlugin("lib/libassimp_sandbox.so");
     pm.loadPlugin("lib/libcppws_sandbox.so");
+    ec->components().addType<sandbox::AsyncUpdate>("AsyncUpdate");
 
     Entity root("Root");
         Entity& display = root.addChild(new Entity("Display"));
@@ -35,12 +37,19 @@ int main(int argc, char *argv[]) {
             Component& image = images.addComponent(ec->components().create("STBImageRGBA"));
             image["filePath"].set<std::string>("../examples/app/data/images/img_test.png");
         Entity& webServer = root.addChild(new Entity("WebServer"));
-            Component ws = webServer.addComponent(ec->components().create("CppWebServer"));
-            ws["port"].set<int>(8081);
-            ws["webDir"].set<std::string>("../examples/app/data/web");
-            Component ws2 = webServer.addComponent(ec->components().create("CppWebServer"));
-            ws2["port"].set<int>(8082);
-            ws2["webDir"].set<std::string>("../examples/app/data/web");
+            Entity& webServer1 = webServer.addChild(new Entity("WebServer1"));
+            Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
+                Component& ws = webServer1.addComponent(ec->components().create("CppWebServer"));
+                ws["port"].set<int>(8081);
+                ws["webDir"].set<std::string>("../examples/app/data/web");
+                Component ws2 = webServer2.addComponent(ec->components().create("CppWebServer"));
+                ws2["port"].set<int>(8082);
+                ws2["webDir"].set<std::string>("../examples/app/data/web");
+        Entity& async = root.addChild(new Entity("Async"));
+            Component& wsUpdate = async.addComponent(ec->components().create("AsyncUpdate"));
+            wsUpdate["entity"].set<Entity*>(&webServer1);
+            Component& wsUpdate2 = async.addComponent(ec->components().create("AsyncUpdate"));
+            wsUpdate2["entity"].set<Entity*>(&webServer2);
     
     root.update();
 
@@ -69,7 +78,7 @@ int main(int argc, char *argv[]) {
         root.runTask(run);
         root.runTask(swapBuffers);
         root.runTask(pollEvents);
-        //webServer.update();
+        async.update();
 
         std::cout << window["width"].get<int>() << std::endl;
         //std::cout << "step" << std::endl;

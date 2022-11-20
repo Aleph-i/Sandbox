@@ -1,4 +1,4 @@
-project (app)
+project (sandbox_threading)
 
 include(${CMAKE_FRAMEWORK_DIR}/project/project.cmake)
 
@@ -7,18 +7,20 @@ include(${CMAKE_FRAMEWORK_DIR}/project/project.cmake)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set (SOURCEFILES
-  main.cpp
+  async_update.cpp
 )
 
 set (HEADERFILES
+async_update.h
 )
 
 # --------------------- Dependencies -----------------------
 
-set(PROJECT_DEPS ${PROJECT_DEPS} sandbox sandbox_graphics sandbox_threading)
-set(DEP_LIBS ${DEP_LIBS} sandbox sandbox_graphics sandbox_threading dl)
+set(PROJECT_DEPS ${PROJECT_DEPS} sandbox)
+set(DEP_LIBS ${DEP_LIBS} sandbox pthread)
+
 
 # --------------------- Executable -----------------------
 
-addStandardExecutable()
+addStandardLibrary()
 
