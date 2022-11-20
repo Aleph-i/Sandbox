@@ -19,6 +19,7 @@ int main(int argc, char *argv[]) {
     pm.loadPlugin("lib/libopengl_sandbox.so");
     pm.loadPlugin("lib/libstb_sandbox.so");
     pm.loadPlugin("lib/libassimp_sandbox.so");
+    pm.loadPlugin("lib/libcppws_sandbox.so");
 
     Entity root("Root");
         Entity& display = root.addChild(new Entity("Display"));
@@ -33,6 +34,13 @@ int main(int argc, char *argv[]) {
         Entity& images = root.addChild(new Entity("Images"));
             Component& image = images.addComponent(ec->components().create("STBImageRGBA"));
             image["filePath"].set<std::string>("../examples/app/data/images/img_test.png");
+        Entity& webServer = root.addChild(new Entity("WebServer"));
+            Component ws = webServer.addComponent(ec->components().create("CppWebServer"));
+            ws["port"].set<int>(8081);
+            ws["webDir"].set<std::string>("../examples/app/data/web");
+            Component ws2 = webServer.addComponent(ec->components().create("CppWebServer"));
+            ws2["port"].set<int>(8082);
+            ws2["webDir"].set<std::string>("../examples/app/data/web");
     
     root.update();
 
@@ -61,6 +69,7 @@ int main(int argc, char *argv[]) {
         root.runTask(run);
         root.runTask(swapBuffers);
         root.runTask(pollEvents);
+        //webServer.update();
 
         std::cout << window["width"].get<int>() << std::endl;
         //std::cout << "step" << std::endl;
