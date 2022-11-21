@@ -22,7 +22,6 @@ public:
                 std::cerr << "Parse error: " << err << std::endl;
             }
 
-
             std::cout << "parsed value: " << std::endl;
             std::cout << val.serialize() << std::endl;
 
@@ -40,8 +39,9 @@ private:
 
 class PicoJsonParsedTree : public sandbox::Component {
 public:
-    PicoJsonParsedTree(sandbox::EntityComponentInterface* ec) : loaded(false), ec(ec) {
+    PicoJsonParsedTree(sandbox::EntityComponentInterface* ec) : loaded(false), ec(ec), parentEntity(NULL) {
         addType<PicoJsonParsedTree>();
+        addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("entity", parentEntity));
     }
 
     ~PicoJsonParsedTree() {}
@@ -82,25 +82,34 @@ public:
 
     void update() {
         if (!loaded) {
+            sandbox::Entity* parent = getEntity();
+            if (parentEntity) {
+                parent = parentEntity;
+            }
+
             PicoJsonFile* file = getEntity()->getComponent<PicoJsonFile>();
             if (file) {
+
+
                 file->update();
                 picojson::value& val = file->getValue();
 
                 if (val.is<picojson::object>()) {
                     picojson::object& obj = val.get<picojson::object>();
-                    addEntity(*getEntity(), obj);
+                    addEntity(*parent, obj);
                 }
                 else if (val.is<picojson::array>()) {
                     picojson::array& arr = val.get<picojson::array>();
                     for (int i = 0; i < arr.size(); i++) {
-                        addEntity(*getEntity(), arr[i].get<picojson::object>());
+                        addEntity(*parent, arr[i].get<picojson::object>());
                     }
                 }
 
             }
 
             loaded = true;
+
+            parent->update();
         }
     }
 
@@ -109,6 +118,7 @@ private:
     picojson::value val;
     bool loaded;
     sandbox::EntityComponentInterface* ec;
+    sandbox::Entity* parentEntity;
 };
 
 extern "C"
@@ -118,7 +128,7 @@ extern "C"
         EntityComponentInterface* ec = dynamic_cast<EntityComponentInterface*>(interface);
         if (ec) {
             ec->components().addType<PicoJsonFile>("PicoJsonFile");
-            ec->components().addFactory(new sandbox::TypedObjectFactoryWithParam<PicoJsonParsedTree, Component, EntityComponentInterface*>("PicoJsonParsedTree", ec));
+            ec->components().addTypeWithParam<PicoJsonParsedTree, sandbox::EntityComponentInterface*>("PicoJsonParsedTree", ec);
         }
 	}
 }

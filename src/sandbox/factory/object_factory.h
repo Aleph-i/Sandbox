@@ -54,6 +54,8 @@ public:
 
     template <typename T>
     void addType(const std::string& typeName) { addFactory(new TypedObjectFactory<T, BASE>(typeName)); }
+    template <typename T, typename PARAM>
+    void addTypeWithParam(const std::string& typeName, PARAM param) { addFactory(new TypedObjectFactoryWithParam<T, BASE, PARAM>(typeName, param)); }
     void addFactory(ObjectFactory<BASE>* factory) {
         factories.push_back(factory);
     }

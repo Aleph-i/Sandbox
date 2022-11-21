@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
             Component& jsonFile = config.addComponent(ec->components().create("PicoJsonFile"));
             jsonFile["filePath"].set<std::string>("../examples/app/data/config/test.json");
             Component& parsedTree = config.addComponent(ec->components().create("PicoJsonParsedTree"));
+            parsedTree["entity"].set<Entity*>(&display);
         Entity& webServer = root.addChild(new Entity("WebServer"));
             Entity& webServer1 = webServer.addChild(new Entity("WebServer1"));
             Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
@@ -57,6 +58,8 @@ int main(int argc, char *argv[]) {
             wsUpdate2["entity"].set<Entity*>(&webServer2);
     
     root.update();
+
+    root.deleteChild(&config);
 
     Task& print = *ec->tasks().create("PrintTask");
     root.runTask(print);
