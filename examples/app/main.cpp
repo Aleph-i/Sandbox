@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     pm.loadPlugin("lib/libstb_sandbox.so");
     pm.loadPlugin("lib/libassimp_sandbox.so");
     pm.loadPlugin("lib/libcppws_sandbox.so");
+    pm.loadPlugin("lib/libpicojson_sandbox.so");
     ec->components().addType<sandbox::AsyncUpdate>("AsyncUpdate");
 
     Entity root("Root");
@@ -36,6 +37,10 @@ int main(int argc, char *argv[]) {
         Entity& images = root.addChild(new Entity("Images"));
             Component& image = images.addComponent(ec->components().create("STBImageRGBA"));
             image["filePath"].set<std::string>("../examples/app/data/images/img_test.png");
+        Entity& config = root.addChild(new Entity("Config"));
+            Component& jsonFile = config.addComponent(ec->components().create("PicoJsonFile"));
+            jsonFile["filePath"].set<std::string>("../examples/app/data/config/test.json");
+            Component& parsedTree = config.addComponent(ec->components().create("PicoJsonParsedTree"));
         Entity& webServer = root.addChild(new Entity("WebServer"));
             Entity& webServer1 = webServer.addChild(new Entity("WebServer1"));
             Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
@@ -78,9 +83,9 @@ int main(int argc, char *argv[]) {
         root.runTask(run);
         root.runTask(swapBuffers);
         root.runTask(pollEvents);
-        async.update();
+        //async.update();
 
-        std::cout << window["width"].get<int>() << std::endl;
+        //std::cout << window["width"].get<int>() << std::endl;
         //std::cout << "step" << std::endl;
     }
 

@@ -1,0 +1,16 @@
+{
+    "name" : "Parsed",
+    "components" : [],
+    "children" : 
+    [
+        {
+            "name" : "ParsedImages",
+            "components" : 
+            [
+                { "type" : "STBImageRGBA", "filePath" : "../examples/app/data/images/img_test.png" },
+                { "type" : "STBImageRGBA", "filePath" : "../examples/app/data/images/img_test.png" }
+            ],
+            "children" : []
+        }
+    ]
+}

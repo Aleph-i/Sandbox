@@ -29,6 +29,24 @@ private:
     std::string typeName;
 };
 
+template <typename T, typename BASE, typename PARAM>
+class TypedObjectFactoryWithParam : public ObjectFactory<BASE> {
+public:
+    TypedObjectFactoryWithParam(const std::string& typeName, PARAM p) : typeName(typeName), p(p) {}
+    virtual ~TypedObjectFactoryWithParam() {}
+    BASE* create(const std::string& typeName) { 
+        if (typeName == this->typeName) {
+            return new T(p);
+        }
+        else {
+            return NULL;
+        } 
+    }
+private:
+    std::string typeName;
+    PARAM p;
+};
+
 template <typename BASE>
 class CompositeObjectFactory {
 public:

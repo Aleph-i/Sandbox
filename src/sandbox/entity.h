@@ -49,6 +49,19 @@ public:
 
     void update();
 
+    template <typename T>
+    T* getComponent() {
+        const std::vector<Component*>& components = getComponents();
+        for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
+            T* component = (*it)->asType<T>();
+            if (component) {
+                return component;
+            }
+        }
+
+        return NULL;
+    }
+
 private:
     void removeComponent(Component* component);
     void removeChild(Entity* child);

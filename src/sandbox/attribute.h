@@ -29,6 +29,12 @@ public:
         }
     }
 
+    template <typename T>
+    bool isType() {
+        static const std::type_info& type = typeid(T);
+        return type == getType();
+    }
+
     const std::string& getName() { return name; }
 
 protected:
