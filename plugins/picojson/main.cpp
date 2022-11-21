@@ -3,6 +3,23 @@
 #include "picojson.h"
 #include <fstream>
 
+void parseJsonFile(picojson::value& val, const std::string& filePath) {
+    std::ifstream file(filePath);
+
+    std::string err = picojson::parse(val, file);
+    if (!err.empty()) {
+        std::cerr << "Parse error: " << err << std::endl;
+    }
+}
+
+std::string getDirectory(const std::string& filePath) {
+    const size_t last_slash_idx = filePath.rfind('/');
+    if (std::string::npos != last_slash_idx) {
+        return filePath.substr(0, last_slash_idx);
+    }
+    return "";
+}
+
 class PicoJsonFile : public sandbox::Component {
 public:
     PicoJsonFile() : loaded(false) {
@@ -15,12 +32,7 @@ public:
     void update() {
         if (!loaded) {
             std::cout << "parse from: " << filePath << std::endl;
-            std::ifstream file(filePath);
-
-            std::string err = picojson::parse(val, file);
-            if (!err.empty()) {
-                std::cerr << "Parse error: " << err << std::endl;
-            }
+            parseJsonFile(val, filePath);
 
             std::cout << "parsed value: " << std::endl;
             std::cout << val.serialize() << std::endl;
@@ -46,22 +58,31 @@ public:
 
     ~PicoJsonParsedTree() {}
 
-    void addEntity(sandbox::Entity& parent, picojson::object& obj) {
+    void addEntity(sandbox::Entity& parent, picojson::object& obj, const std::string directory) {
+        picojson::object::iterator it = obj.find("include");
+        if (it != obj.end()) {
+            picojson::value val;
+            std::string filePath = directory + "/" + it->second.get<std::string>();
+            parseJsonFile(val, filePath);
+            addFile(val, &parent, getDirectory(filePath));
+            return;
+        }
+        
         std::string name = obj["name"].get<std::string>();
         sandbox::Entity& entity = parent.addChild(new sandbox::Entity(name));
 
         picojson::array& components = obj["components"].get<picojson::array>();
         for (int i = 0; i < components.size(); i++) {
-            addComponent(entity, components[i].get<picojson::object>());
+            addComponent(entity, components[i].get<picojson::object>(), directory);
         }
 
         picojson::array& children = obj["children"].get<picojson::array>();
         for (int i = 0; i < children.size(); i++) {
-            addEntity(entity, children[i].get<picojson::object>());
+            addEntity(entity, children[i].get<picojson::object>(), directory);
         }
     }
 
-    void addComponent(sandbox::Entity& entity, picojson::object& obj) {
+    void addComponent(sandbox::Entity& entity, picojson::object& obj, const std::string directory) {
         std::string type = obj["type"].get<std::string>();
         sandbox::Component& component = entity.addComponent(ec->components().create(type));
 
@@ -80,6 +101,19 @@ public:
         }
     }
 
+    void addFile(picojson::value& val, sandbox::Entity* parent, const std::string directory) {
+        if (val.is<picojson::object>()) {
+            picojson::object& obj = val.get<picojson::object>();
+            addEntity(*parent, obj, directory);
+        }
+        else if (val.is<picojson::array>()) {
+            picojson::array& arr = val.get<picojson::array>();
+            for (int i = 0; i < arr.size(); i++) {
+                addEntity(*parent, arr[i].get<picojson::object>(), directory);
+            }
+        }
+    }
+
     void update() {
         if (!loaded) {
             sandbox::Entity* parent = getEntity();
@@ -89,22 +123,12 @@ public:
 
             PicoJsonFile* file = getEntity()->getComponent<PicoJsonFile>();
             if (file) {
-
+                std::string filePath = (*file)["filePath"].get<std::string>();
 
                 file->update();
                 picojson::value& val = file->getValue();
 
-                if (val.is<picojson::object>()) {
-                    picojson::object& obj = val.get<picojson::object>();
-                    addEntity(*parent, obj);
-                }
-                else if (val.is<picojson::array>()) {
-                    picojson::array& arr = val.get<picojson::array>();
-                    for (int i = 0; i < arr.size(); i++) {
-                        addEntity(*parent, arr[i].get<picojson::object>());
-                    }
-                }
-
+                addFile(val, parent, getDirectory(filePath));
             }
 
             loaded = true;

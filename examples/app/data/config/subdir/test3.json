@@ -1,0 +1,5 @@
+{
+    "name" : "Geometry2",
+    "components" : [{ "type" : "STBImageRGBA", "filePath" : "../examples/app/data/images/img_test.png" }],
+    "children" : []
+}

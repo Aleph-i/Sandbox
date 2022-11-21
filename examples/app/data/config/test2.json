@@ -1,17 +1,16 @@
 {
-    "name" : "Parsed",
+    "name" : "Parsed2",
     "components" : [],
     "children" : 
     [
         {
-            "name" : "ParsedImages",
+            "name" : "ParsedImages2",
             "components" : 
             [
                 { "type" : "STBImageRGBA", "filePath" : "../examples/app/data/images/img_test.png" },
                 { "type" : "STBImageRGBA", "filePath" : "../examples/app/data/images/img_test.png" }
             ],
-            "children" : [{ "include" : "test2.json" }]
-        },
-        { "include" : "test2.json" }
+            "children" : [{ "include" : "subdir/test3.json" }]
+        }
     ]
 }
