@@ -95,7 +95,14 @@ public:
                     }
                 }
                 else if (it->second.is<std::string>()) {
-                    component[it->first].set<std::string>(it->second.get<std::string>());
+                    std::string s = it->second.get<std::string>();
+                    int index = s.find("${directory}");
+                    std::cout << s << " " << index << std::endl;
+                    if (index >= 0) {
+                        s = s.replace(index, sizeof("${directory}") - 1, directory);
+                        std::cout << s << std::endl;
+                    }
+                    component[it->first].set<std::string>(s);
                 }
             }
         }
