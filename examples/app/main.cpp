@@ -7,6 +7,17 @@
 #include <unistd.h>
 #include "sandbox_threading/async_update.h"
 
+class PrintTest : public sandbox::Component {
+public:
+    PrintTest() {
+        addType<PrintTest>();
+    }
+
+    void update() {
+        std::cout << "PrintTest" << std::endl;
+    }
+};
+
 int main(int argc, char *argv[]) {
     std::cout << "This is a test." << std::endl;
 
@@ -44,18 +55,24 @@ int main(int argc, char *argv[]) {
             parsedTree["entity"].set<Entity*>(&display);
         Entity& webServer = root.addChild(new Entity("WebServer"));
             Entity& webServer1 = webServer.addChild(new Entity("WebServer1"));
-            Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
                 Component& ws = webServer1.addComponent(ec->components().create("CppWebServer"));
                 ws["port"].set<int>(8081);
                 ws["webDir"].set<std::string>("../examples/app/data/web");
+                Component& updateCmd = webServer1.addComponent(ec->components().create("WebUpdateCommand"));
+                updateCmd["command"].set<std::string>("update");
+            Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
                 Component ws2 = webServer2.addComponent(ec->components().create("CppWebServer"));
                 ws2["port"].set<int>(8082);
                 ws2["webDir"].set<std::string>("../examples/app/data/web");
+            Entity& test = webServer.addChild(new Entity("Test"));
+                //test.addComponent(new PrintTest());
         Entity& async = root.addChild(new Entity("Async"));
             Component& wsUpdate = async.addComponent(ec->components().create("AsyncUpdate"));
             wsUpdate["entity"].set<Entity*>(&webServer1);
             Component& wsUpdate2 = async.addComponent(ec->components().create("AsyncUpdate"));
             wsUpdate2["entity"].set<Entity*>(&webServer2);
+            Component& wsUpdate3 = async.addComponent(ec->components().create("AsyncUpdate"));
+            wsUpdate3["entity"].set<Entity*>(&test);
     
     root.update();
 
@@ -79,8 +96,14 @@ int main(int argc, char *argv[]) {
     root.runTask(swapBuffers);
     root.runTask(pollEvents);
 
+    //std::mutex* updateMutex = wsUpdate3["updateMutex"].get<std::mutex*>();
+    std::mutex updateMutex;
+
     while (true) {
         usleep(100000);
+        std::unique_lock<std::mutex> lock(updateMutex);
+        std::cout << "abc" << std::endl;
+        lock.unlock();
 
         root.runTask(makeCurrent);
         root.runTask(run);

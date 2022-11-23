@@ -11,7 +11,7 @@ set (SOURCEFILES
 )
 
 set (HEADERFILES
-async_update.h
+  async_update.h
 )
 
 # --------------------- Dependencies -----------------------

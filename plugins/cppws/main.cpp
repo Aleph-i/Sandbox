@@ -1,12 +1,76 @@
 #include <iostream>
 #include "sandbox/interfaces/entity_component_interface.h"
 #include "WebServer.h"
+#include <map>
+#include <mutex>
+#include "sandbox/object/object.h"
 
-#include <thread>
+
+class PicoJsonValueImpl : public sandbox::ValueImpl {
+private:
+    void* get(void* state, const std::type_info& type) const {
+        picojson::value& val = *static_cast<picojson::value*>(state);
+        if (type == typeid(double)) {
+            std::cout << "double" << std::endl;
+            return &val.get<double>();
+        }
+
+        return NULL;
+    }
+
+public:
+    static const PicoJsonValueImpl& instance() {
+        static PicoJsonValueImpl impl;
+        return impl;
+    }
+};
+
+class PicoJsonValue : public sandbox::Value {
+public:
+    PicoJsonValue(picojson::value& val) : sandbox::Value(&(PicoJsonValueImpl::instance()), &val) {}
+};
+
+class PicoJsonObjectImpl : public sandbox::ObjectImpl {
+private:
+    sandbox::Value getValue(void* state, const std::string& key) const {
+        picojson::object& obj = *static_cast<picojson::object*>(state);
+        return PicoJsonValue(obj[key]);
+    }
+
+public:
+    static const PicoJsonObjectImpl& instance() {
+        static PicoJsonObjectImpl impl;
+        return impl;
+    }
+};
+
+class PicoJsonObject : public sandbox::Object {
+public:
+    PicoJsonObject(picojson::object& obj) : sandbox::Object(&(PicoJsonObjectImpl::instance()), &obj) {}
+};
+
+class WebCommand {
+public:
+    virtual ~WebCommand() {}
+
+    virtual void run(const std::string& cmd, sandbox::Object& data, sandbox::Object& returnValue) = 0;
+};
+
+/*class WebUpdateCommand : public WebCommand {
+public:
+    void run(const std::string& cmd, sandbox::Object& data, sandbox::Object& returnValue) {
+        std::cout << cmd << " was run. " << data["simSpeed"].get<double>() << "  " << data["id"].get<double>() << std::endl;
+        //{"command":"update","delta":0,"id":142,"simSpeed":1}
+    }
+};*/
+
+struct WebAppServerState {
+    std::map<std::string, WebCommand*> commands;
+};
 
 class WebAppService : public JSONSession {
 public:
-    WebAppService() {
+    WebAppService(WebAppServerState& state) : state(state) {
     }
 
     void receiveJSON(picojson::value& val) {
@@ -20,19 +84,36 @@ public:
     }
 
     void ReceiveCommand(const std::string& cmd, picojson::object& data, picojson::object& returnValue) {
-        std::cout << "Unknown command: " << cmd << " - " << picojson::value(data).serialize() << std::endl;
+        std::map<std::string, WebCommand*>::iterator it = state.commands.find(cmd);
+        if (it != state.commands.end()) {
+            PicoJsonObject d(data);
+            PicoJsonObject r(returnValue);
+            it->second->run(cmd, d, r);
+        }
+        //else {
+            std::cout << "Unknown command: " << cmd << " - " << picojson::value(data).serialize() << std::endl;
+        //}
     }
 
 private:
+    WebAppServerState& state;
 };
 
 class WebAppServer : public WebServerBase {
 public:
-	WebAppServer(int port = 8081, const std::string& webDir = ".") : WebServerBase(port, webDir) {}
+	WebAppServer(int port = 8081, const std::string& webDir = ".") : WebServerBase(port, webDir) {
+        //state.commands["update"] = new WebUpdateCommand();
+    }
+
+    void addWebCommand(const std::string& cmd, WebCommand* command) {
+        state.commands[cmd] = command;
+    }
 
 protected:
-	Session* createSession() { return new WebAppService(); }
+	Session* createSession() { return new WebAppService(state); }
+
 private:
+    WebAppServerState state;
 };
 
 
@@ -46,6 +127,10 @@ public:
 
     ~CppWebServer() {
         delete webServer;
+    }
+
+    void addWebCommand(const std::string& cmd, WebCommand* command) {
+        webServer->addWebCommand(cmd, command);
     }
 
     void update() {
@@ -62,44 +147,41 @@ private:
     std::string webDir;
 };
 
-class AsyncUpdate : public sandbox::Component {
+class WebCommandComponent : public sandbox::Component, public WebCommand {
 public:
-    AsyncUpdate() : running(true), updateThread(NULL), entity(NULL) {
-        addType<AsyncUpdate>();
-        addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("entity", entity));
-    }
-
-    ~AsyncUpdate() {
-        running = false;
-        updateThread->join();
-        delete updateThread;
-    }
-
-    void updateLoop() {
-        std::cout << "during" << std::endl;
-        while(running) {
-            if (entity) {
-                entity->update();
-            }
-        }
+    WebCommandComponent() : loaded(false) {
+        addType<WebCommandComponent>();
+        addType<WebCommand>(static_cast<WebCommand*>(this));
+        addAttribute(new sandbox::TypedAttributeRef<std::string>("command", command));
     }
 
     void update() {
-        if (!updateThread) {
-            std::cout << "before" << std::endl;
-            updateThread = new std::thread(&AsyncUpdate::updateLoop, this);
-            std::cout << "after" << std::endl;
+        if (!loaded) {
+            CppWebServer* ws = this->getEntity()->getComponentFromAbove<CppWebServer>();
+            if (ws) {
+                ws->addWebCommand(command, this);
+            }
+
+            loaded = true;
         }
     }
 
-
-
 private:
-    bool running;
-    std::thread* updateThread;
-    sandbox::Entity* entity;
+    bool loaded;
+    std::string command;
 };
 
+class WebUpdateCommand : public WebCommandComponent {
+public:
+    WebUpdateCommand() : WebCommandComponent() {
+        addType<WebUpdateCommand>();
+    }
+
+    void run(const std::string& cmd, sandbox::Object& data, sandbox::Object& returnValue) {
+        std::cout << cmd << " was run. " << data["simSpeed"].get<double>() << "  " << data["id"].get<double>() << std::endl;
+        //{"command":"update","delta":0,"id":142,"simSpeed":1}
+    }
+};
 
 extern "C"
 {
@@ -108,7 +190,7 @@ extern "C"
         EntityComponentInterface* ec = dynamic_cast<EntityComponentInterface*>(interface);
         if (ec) {
             ec->components().addType<CppWebServer>("CppWebServer");
-            //ec->components().addType<AsyncUpdate>("AsyncUpdate");
+            ec->components().addType<WebUpdateCommand>("WebUpdateCommand");
         }
 	}
 }

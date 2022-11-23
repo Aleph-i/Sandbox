@@ -62,6 +62,20 @@ public:
         return NULL;
     }
 
+    template <typename T>
+    T* getComponentFromAbove() {
+        Entity* entity = this;
+        while (entity) {
+            T* component = entity->getComponent<T>();
+            if (component) {
+                return component;
+            }
+            entity = entity->getParent();
+        }
+
+        return NULL;
+    }
+
 private:
     void removeComponent(Component* component);
     void removeChild(Entity* child);

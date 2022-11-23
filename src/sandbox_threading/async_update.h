@@ -4,6 +4,7 @@
 #include "component.h"
 #include "entity.h"
 #include <thread>
+#include <mutex>
 #include <iostream>
 
 namespace sandbox {
@@ -32,9 +33,7 @@ public:
 
     void update() {
         if (!updateThread) {
-            std::cout << "before" << std::endl;
             updateThread = new std::thread(&AsyncUpdate::updateLoop, this);
-            std::cout << "after" << std::endl;
         }
     }
 
