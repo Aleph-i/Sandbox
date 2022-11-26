@@ -18,6 +18,15 @@ public:
     }
 };
 
+
+class UpdateCommand : public sandbox::ComponentCallback {
+public:
+    void run(sandbox::Component& component, sandbox::Object& data, sandbox::Object& returnValue) {
+        std::cout << "Something: " << data["id"].get<double>() << std::endl;
+    }
+};
+
+
 int main(int argc, char *argv[]) {
     std::cout << "This is a test." << std::endl;
 
@@ -60,6 +69,7 @@ int main(int argc, char *argv[]) {
                 ws["webDir"].set<std::string>("../examples/app/data/web");
                 Component& updateCmd = webServer1.addComponent(ec->components().create("WebUpdateCommand"));
                 updateCmd["command"].set<std::string>("update");
+                updateCmd.addCallback("command", new UpdateCommand());
             Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
                 Component ws2 = webServer2.addComponent(ec->components().create("CppWebServer"));
                 ws2["port"].set<int>(8082);

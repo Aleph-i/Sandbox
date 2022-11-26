@@ -48,7 +48,7 @@ private:
 };
 
 template <typename BASE>
-class CompositeObjectFactory {
+class CompositeObjectFactory : public ObjectFactory<BASE> {
 public:
     virtual ~CompositeObjectFactory() {}
 

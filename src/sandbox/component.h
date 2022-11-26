@@ -6,8 +6,18 @@
 #include <string>
 #include <map>
 #include "attribute.h"
+#include "sandbox/object/object.h"
 
 namespace sandbox {
+
+class Component;
+
+class ComponentCallback {
+public:
+    virtual ~ComponentCallback() {}
+
+    virtual void run(Component& component, sandbox::Object& params, sandbox::Object& returnVal) = 0;
+};
 
 class Entity;
 
@@ -47,7 +57,25 @@ public:
         return *attributes[name];
     }
 
+    virtual void addCallback(const std::string& name, ComponentCallback* callback) {
+        callbacks[name].push_back(callback);
+    }
+
 protected:
+    virtual void createCallback(const std::string& name) {
+        std::map<std::string, std::vector<ComponentCallback*> >::iterator it = callbacks.find(name);
+        if (it == callbacks.end()) {
+            callbacks[name] = std::vector<ComponentCallback*>();
+        }
+    }
+
+    virtual void runCallback(const std::string& name, sandbox::Object& params, sandbox::Object& returnVal) {
+        std::vector<ComponentCallback*>& callbackList = callbacks[name];
+        for (int i = 0; i < callbackList.size(); i++) {
+            callbackList[i]->run(*this, params, returnVal);
+        }
+    }
+
     virtual void addType(const std::type_info& type, void* ptr) {
         types.push_back(&type);
         pointers.push_back(ptr);
@@ -66,6 +94,7 @@ private:
     std::vector<const std::type_info*> types;
     std::vector<void*> pointers;
     std::map<std::string, Attribute*> attributes;
+    std::map<std::string, std::vector<ComponentCallback*> > callbacks;
 };
 
 }

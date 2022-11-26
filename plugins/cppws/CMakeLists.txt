@@ -30,8 +30,8 @@ set(DEP_INCLUDES ${DEP_INCLUDES}
 )
 set(ALL_LIBS ${ALL_LIBS} websockets crypto ssl z)
 
-set(PROJECT_DEPS ${PROJECT_DEPS} sandbox)
-set(DEP_LIBS ${DEP_LIBS} sandbox)
+set(PROJECT_DEPS ${PROJECT_DEPS} sandbox picojson_sandbox)
+set(DEP_LIBS ${DEP_LIBS} sandbox picojson_sandbox)
 
 # --------------------- Executable -----------------------
 
