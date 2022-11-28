@@ -70,6 +70,56 @@ private:
     void* state;
 };
 
+
+//-------------------------------------------
+
+template <typename T>
+class MapValueImpl : public sandbox::ValueImpl {
+private:
+    void* get(void* state, const std::type_info& type) const {
+        T& val = *static_cast<T*>(state);
+        return &val;
+    }
+
+public:
+    static const MapValueImpl& instance() {
+        static MapValueImpl impl;
+        return impl;
+    }
+};
+
+template <typename T>
+class MapValue : public sandbox::Value {
+public:
+    MapValue(T& val) : sandbox::Value(&(MapValueImpl<T>::instance()), &val) {}
+};
+
+template <typename T>
+class MapObjectImpl : public sandbox::ObjectImpl {
+private:
+    sandbox::Value getValue(void* state, const std::string& key) const {
+        std::map<std::string, T*>& obj = *static_cast<std::map<std::string, T*>*>(state);
+        return MapValue<T>(*obj[key]);
+    }
+
+public:
+    static const MapObjectImpl& instance() {
+        static MapObjectImpl<T> impl;
+        return impl;
+    }
+};
+
+template <typename T>
+class MapObject : public sandbox::Object {
+public:
+    MapObject() : sandbox::Object(&(MapObjectImpl<T>::instance()), &mappedValues) {}
+    void mapValue(const std::string& key, T& val) {
+        mappedValues[key] = &val;
+    }
+private:
+    std::map<std::string, T*> mappedValues;
+};
+
 }
 
 #endif

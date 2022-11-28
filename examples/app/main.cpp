@@ -19,10 +19,30 @@ public:
 };
 
 
-class UpdateCommand : public sandbox::ComponentCallback {
+class UpdateCommand : public sandbox::CallbackComponent {
 public:
-    void run(sandbox::Component& component, sandbox::Object& data, sandbox::Object& returnValue) {
+    UpdateCommand(std::mutex& mutex) : mutex(mutex) {}
+    void run(sandbox::Object& data, sandbox::Object& returnValue) {
+        std::unique_lock<std::mutex> lock(mutex);
         std::cout << "Something: " << data["id"].get<double>() << std::endl;
+    }
+
+private:
+    std::mutex& mutex;
+};
+
+
+class CursorPosition : public sandbox::CallbackComponent {
+public:
+    void run(sandbox::Object& data, sandbox::Object& returnValue) {
+        std::cout << "Something: " << data["x"].get<double>() << " " << data["y"].get<double>() << std::endl;
+    }
+};
+
+class MouseButton : public sandbox::CallbackComponent {
+public:
+    void run(sandbox::Object& data, sandbox::Object& returnValue) {
+        std::cout << "Something: " << data["button"].get<int>() << " " << data["action"].get<int>() << " " << data["mods"].get<int>() << std::endl;
     }
 };
 
@@ -44,12 +64,20 @@ int main(int argc, char *argv[]) {
     pm.loadPlugin("lib/libpicojson_sandbox.so");
     ec->components().addType<sandbox::AsyncUpdate>("AsyncUpdate");
 
+    std::mutex updateMutex;
+
     Entity root("Root");
         Entity& display = root.addChild(new Entity("Display"));
             Component& window = display.addComponent(ec->components().create("GLFWWindow"));
                 window["width"].set<int>(700);
             Entity& triangle = display.addChild(new Entity("Triangle"));
                 triangle.addComponent(ec->components().create("OpenGLTest"));
+            Entity& cursor = display.addChild(new Entity("Cursor"));
+                cursor.addComponent(ec->components().create("GLFWCursorPosition"));
+                cursor.addComponent(new CursorPosition());
+            Entity& button = display.addChild(new Entity("Button"));
+                button.addComponent(ec->components().create("GLFWMouseButton"));
+                button.addComponent(new MouseButton());
         Entity& geometry = root.addChild(new Entity("Geometry"));
             Entity& object = geometry.addChild(new Entity("Object"));
                 Component& mesh = object.addComponent(ec->components().create("AssimpMesh"));
@@ -62,20 +90,24 @@ int main(int argc, char *argv[]) {
             jsonFile["filePath"].set<std::string>("../examples/app/data/config/test.json");
             Component& parsedTree = config.addComponent(ec->components().create("PicoJsonParsedTree"));
             parsedTree["entity"].set<Entity*>(&display);
-        Entity& webServer = root.addChild(new Entity("WebServer"));
+
+        Entity webServer("WebServer");
             Entity& webServer1 = webServer.addChild(new Entity("WebServer1"));
                 Component& ws = webServer1.addComponent(ec->components().create("CppWebServer"));
                 ws["port"].set<int>(8081);
                 ws["webDir"].set<std::string>("../examples/app/data/web");
-                Component& updateCmd = webServer1.addComponent(ec->components().create("WebUpdateCommand"));
+                Component& updateCmd = webServer1.addComponent(ec->components().create("WebCommandComponent"));
                 updateCmd["command"].set<std::string>("update");
-                updateCmd.addCallback("command", new UpdateCommand());
+                webServer1.addComponent(new UpdateCommand(updateMutex));
+                webServer1.addComponent(new UpdateCommand(updateMutex));
+                //updateCmd.addCallback("command", new UpdateCommand());
             Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
                 Component ws2 = webServer2.addComponent(ec->components().create("CppWebServer"));
                 ws2["port"].set<int>(8082);
                 ws2["webDir"].set<std::string>("../examples/app/data/web");
             Entity& test = webServer.addChild(new Entity("Test"));
                 //test.addComponent(new PrintTest());
+
         Entity& async = root.addChild(new Entity("Async"));
             Component& wsUpdate = async.addComponent(ec->components().create("AsyncUpdate"));
             wsUpdate["entity"].set<Entity*>(&webServer1);
@@ -107,7 +139,6 @@ int main(int argc, char *argv[]) {
     root.runTask(pollEvents);
 
     //std::mutex* updateMutex = wsUpdate3["updateMutex"].get<std::mutex*>();
-    std::mutex updateMutex;
 
     while (true) {
         usleep(100000);

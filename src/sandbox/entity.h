@@ -76,6 +76,39 @@ public:
         return NULL;
     }
 
+    template <typename T>
+    std::vector<T*> getComponents() {
+        const std::vector<Component*>& components = getComponents();
+        std::vector<T*> typedComponents;
+        for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
+            T* component = (*it)->asType<T>();
+            if (component) {
+                typedComponents.push_back(component);
+            }
+        }
+
+        return typedComponents;
+    }
+
+/*    void addCallback(const std::string& name, ComponentCallback* callback) {
+        callbacks[name].push_back(callback);
+    }
+
+    void createCallback(const std::string& name) {
+        std::map<std::string, std::vector<ComponentCallback*> >::iterator it = callbacks.find(name);
+        if (it == callbacks.end()) {
+            callbacks[name] = std::vector<ComponentCallback*>();
+        }
+    }
+
+    void runCallback(const std::string& name, sandbox::Object& params, sandbox::Object& returnVal) {
+        std::vector<ComponentCallback*>& callbackList = callbacks[name];
+        for (int i = 0; i < callbackList.size(); i++) {
+            callbackList[i]->run(*this, params, returnVal);
+        }
+    }
+    */
+
 private:
     void removeComponent(Component* component);
     void removeChild(Entity* child);
@@ -85,6 +118,7 @@ private:
     std::vector<Entity*> children;
     Entity* parent;
     std::string name;
+    //std::map<std::string, std::vector<ComponentCallback*> > callbacks;
 };
 
 template <typename T>

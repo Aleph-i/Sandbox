@@ -48,9 +48,9 @@ public:
             PicoJsonObject r(returnValue);
             it->second->run(cmd, d, r);
         }
-        //else {
+        else {
             std::cout << "Unknown command: " << cmd << " - " << picojson::value(data).serialize() << std::endl;
-        //}
+        }
     }
 
 private:
@@ -118,31 +118,39 @@ public:
             CppWebServer* ws = this->getEntity()->getComponentFromAbove<CppWebServer>();
             if (ws) {
                 ws->addWebCommand(command, this);
+                callbacks = getEntity()->getComponents<sandbox::CallbackComponent>();
             }
 
             loaded = true;
         }
     }
 
+    void run(const std::string& cmd, sandbox::Object& data, sandbox::Object& returnValue) {
+        for (int i = 0; i < callbacks.size(); i++) {
+            callbacks[i]->run(data, returnValue);
+        }
+    }
+
 private:
     bool loaded;
     std::string command;
+    std::vector<sandbox::CallbackComponent*> callbacks;
 };
 
-class WebUpdateCommand : public WebCommandComponent {
+/*class WebUpdateCommand : public WebCommandComponent {
 public:
     WebUpdateCommand() : WebCommandComponent() {
         addType<WebUpdateCommand>();
-        createCallback("command");
+        //createCallback("command");
     }
 
     void run(const std::string& cmd, sandbox::Object& data, sandbox::Object& returnValue) {
         std::cout << cmd << " was run. " << data["simSpeed"].get<double>() << "  " << data["id"].get<double>() << std::endl;
         //{"command":"update","delta":0,"id":142,"simSpeed":1}
-        runCallback("command", data, returnValue);
+        //runCallback("command", data, returnValue);
         
     }
-};
+};*/
 
 extern "C"
 {
@@ -151,7 +159,7 @@ extern "C"
         EntityComponentInterface* ec = dynamic_cast<EntityComponentInterface*>(interface);
         if (ec) {
             ec->components().addType<CppWebServer>("CppWebServer");
-            ec->components().addType<WebUpdateCommand>("WebUpdateCommand");
+            ec->components().addType<WebCommandComponent>("WebCommandComponent");
         }
 	}
 }

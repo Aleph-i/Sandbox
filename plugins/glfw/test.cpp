@@ -21,6 +21,82 @@ public:
     }
 };
 
+namespace sandbox {
+
+class ComponentWithCallbacks : public sandbox::Component {
+public:
+    ComponentWithCallbacks() : loaded(false) {}
+    virtual ~ComponentWithCallbacks() {}
+
+    void update() {
+        if (!loaded) {
+            callbacks = getEntity()->getComponents<sandbox::CallbackComponent>();
+
+            loaded = true;
+        }
+    }
+
+    void run(sandbox::Object& data, sandbox::Object& returnValue) {
+        for (int i = 0; i < callbacks.size(); i++) {
+            callbacks[i]->run(data, returnValue);
+        }
+    }
+
+private:
+    bool loaded;
+    std::string command;
+    std::vector<sandbox::CallbackComponent*> callbacks;
+};
+
+}
+
+class GLFWCursorPosition : public sandbox::ComponentWithCallbacks {
+public:
+    GLFWCursorPosition() : loaded(false){
+        addType<GLFWCursorPosition>();
+        obj.mapValue("x", x);
+        obj.mapValue("y", y);
+    }
+
+    void update();
+
+    void updatePos(double x, double y) {
+        this->x = x;
+        this->y = y;
+        run(obj, obj);
+    }
+
+private:
+    bool loaded;
+    double x;
+    double y;
+    sandbox::MapObject<double> obj;
+};
+
+class GLFWMouseButton : public sandbox::ComponentWithCallbacks {
+public:
+    GLFWMouseButton() : loaded(false){
+        addType<GLFWMouseButton>();
+        obj.mapValue("button", button);
+        obj.mapValue("action", action);
+        obj.mapValue("mods", mods);
+    }
+
+    void update();
+
+    void updateButton(int button, int action, int mods) {
+        this->button = button;
+        this->action = action;
+        this->mods = mods;
+        run(obj, obj);
+    }
+
+private:
+    bool loaded;
+    int button, action, mods;
+    sandbox::MapObject<int> obj;
+};
+
 class GLFWWindow : public sandbox::Component {
 public:
     GLFWWindow() : window(NULL), loaded(false) {
@@ -71,6 +147,11 @@ public:
         glfwMakeContextCurrent(window);
     }
 
+    GLFWwindow* getWindow() { return window; }
+
+    void setCursorPosition(GLFWCursorPosition* cursorPosition) { this->cursorPosition = cursorPosition; }
+    void setMouseButton(GLFWMouseButton* mouseButton) { this->mouseButton = mouseButton; }
+
 private:
 
     void sizeCallback(GLFWwindow* window, int width, int height) {
@@ -81,10 +162,14 @@ private:
 
     void cursorPositionCallback(GLFWwindow* window, float xpos, float ypos) {
     	std::cout << xpos/width << ", " << 1.0-ypos/height << std::endl;
+        if (cursorPosition) {
+            cursorPosition->updatePos(xpos/width, 1.0-ypos/height);
+        }
     }
 
     void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-        std::cout << button << ", " << action << ", " << mods << std::endl;
+        //std::cout << button << ", " << action << ", " << mods << std::endl;
+        mouseButton->updateButton(button, action, mods);
     }
 
     static void glfw_size_callback(GLFWwindow* window, int width, int height) {
@@ -106,7 +191,29 @@ private:
     int width, height;
     std::string title;
     bool loaded;
+    GLFWCursorPosition* cursorPosition;
+    GLFWMouseButton* mouseButton;
 };
+
+
+void GLFWCursorPosition::update() {
+    if (!loaded) {
+        GLFWWindow* windowComponent = getEntity()->getComponentFromAbove<GLFWWindow>();
+        windowComponent->setCursorPosition(this);
+    }
+
+    ComponentWithCallbacks::update();
+}
+
+void GLFWMouseButton::update() {
+    if (!loaded) {
+        GLFWWindow* windowComponent = getEntity()->getComponentFromAbove<GLFWWindow>();
+        windowComponent->setMouseButton(this);
+    }
+
+    ComponentWithCallbacks::update();
+}
+
 
 /*class GLFWInitContext : public sandbox::TypedRecursiveTask<GLFWWindow> {
 public:
@@ -146,6 +253,8 @@ extern "C"
         EntityComponentInterface* ec = dynamic_cast<EntityComponentInterface*>(interface);
         if (ec) {
             ec->components().addType<GLFWWindow>("GLFWWindow");
+            ec->components().addType<GLFWCursorPosition>("GLFWCursorPosition");
+            ec->components().addType<GLFWMouseButton>("GLFWMouseButton");
             //ec->tasks().addType<GLFWInitContext>("GLFWInitContext");
             ec->tasks().addType<GLFWSwapBuffers>("GLFWSwapBuffers");
             ec->tasks().addType<GLFWPollEvents>("GLFWPollEvents");
