@@ -1,5 +1,6 @@
 #include <iostream>
 #include "sandbox/interfaces/entity_component_interface.h"
+#include "sandbox_graphics/renderable.h"
 
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
@@ -45,11 +46,14 @@ static void error_callback(int error, const char* description)
     fprintf(stderr, "Error: %s\n", description);
 }
 
-class OpenGLTest: public sandbox::Component {
+class OpenGLTest: public sandbox::Component, public sandbox::Renderable {
 public:
     OpenGLTest() {
         addType<OpenGLTest>();
+        addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
+        addAttribute(new sandbox::TypedAttributeRef<bool>("dir", dir, true));
     }
+    bool dir;
 
     ~OpenGLTest() {
     }
@@ -103,7 +107,7 @@ public:
 
         mat4x4 m, p, mvp;
         mat4x4_identity(m);
-        mat4x4_rotate_Z(m, m, (float) glfwGetTime());
+        mat4x4_rotate_Z(m, m, (float) glfwGetTime()*(dir?1.0:-1.0));
         //glm::radians(45.0f), aspectRatio, 0.1f, 100.0f
         //mat4x4_perspective(p, 0.39269875, ratio, 0.1f, 100.0f);
         mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
@@ -114,6 +118,16 @@ public:
         glBindVertexArray(vertex_array);
         glDrawArrays(GL_TRIANGLES, 0, 3);
   
+    }
+
+    virtual void initContext(sandbox::RenderContext& context) {
+        init();
+    }
+    virtual void startRender(const sandbox::RenderContext& context) {
+        run();
+    }
+    virtual void finishRender(const sandbox::RenderContext& context) {
+
     }
 
 private:

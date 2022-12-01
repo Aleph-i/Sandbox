@@ -1,5 +1,6 @@
 #include <iostream>
 #include "sandbox/interfaces/entity_component_interface.h"
+#include "sandbox_graphics/renderable.h"
 
 #define GLAD_GL_IMPLEMENTATION
 #include <glad/gl.h>
@@ -97,10 +98,11 @@ private:
     sandbox::MapObject<int> obj;
 };
 
-class GLFWWindow : public sandbox::Component {
+class GLFWWindow : public sandbox::Component, public sandbox::Renderable {
 public:
     GLFWWindow() : window(NULL), loaded(false) {
         addType<GLFWWindow>();
+        addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<int>("width", width, 640));
         addAttribute(new sandbox::TypedAttributeRef<int>("height", height, 480));
         addAttribute(new sandbox::TypedAttributeRef<std::string>("title", title, "My Title"));
@@ -151,6 +153,27 @@ public:
 
     void setCursorPosition(GLFWCursorPosition* cursorPosition) { this->cursorPosition = cursorPosition; }
     void setMouseButton(GLFWMouseButton* mouseButton) { this->mouseButton = mouseButton; }
+
+    void initContext(sandbox::RenderContext& context) {
+        context.addStack("width", new sandbox::TypedItemStack<int>());
+        context.addStack("height", new sandbox::TypedItemStack<int>());
+
+        //std::cout << "Test init" << std::endl;
+    }
+
+    void startRender(const sandbox::RenderContext& context) {
+        glfwMakeContextCurrent(window);
+        context["width"].push<int>(width);
+        context["height"].push<int>(height);
+        //std::cout << "Test render" << std::endl;
+    }
+
+    void finishRender(const sandbox::RenderContext& context) {
+        context["width"].pop();
+        context["height"].pop();
+        //std::cout << "swap" << std::endl;
+        glfwSwapBuffers(window);
+    }
 
 private:
 
@@ -243,6 +266,20 @@ public:
     }
 };
 
+class GLFWRender : public sandbox::TypedRecursiveTask2<sandbox::Renderable> {
+public:
+    void startComponent(sandbox::Renderable& renderable, sandbox::TaskContext* context) {
+        renderable.update(renderContext);
+        renderable.startRender(renderContext);
+    }
+    void finishComponent(sandbox::Renderable& renderable, sandbox::TaskContext* context) {
+        renderable.finishRender(renderContext);
+    }
+
+private:
+    sandbox::RenderContext renderContext;
+};
+
 extern "C"
 {
 	void registerInterface(sandbox::PluginInterface* interface) {
@@ -259,6 +296,7 @@ extern "C"
             ec->tasks().addType<GLFWSwapBuffers>("GLFWSwapBuffers");
             ec->tasks().addType<GLFWPollEvents>("GLFWPollEvents");
             ec->tasks().addType<GLFWMakeCurrent>("GLFWMakeCurrent");
+            ec->tasks().addType<GLFWRender>("GLFWRender");
         }
 	}
 }

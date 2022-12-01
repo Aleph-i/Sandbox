@@ -11,15 +11,9 @@ class Renderer : public Component {
 public:
     Renderer() {
         addType<Renderer>();
-        addAttribute(new TypedAttributeRef< std::vector<Entity*> >("renderGroups", renderGroups));
-    }
-
-    void addRenderGroup(Entity& renderGroup) {
-        renderGroups.push_back(&renderGroup);
     }
 
 private:
-    std::vector<Entity*> renderGroups;
 };
 
 

@@ -138,6 +138,53 @@ public:
     virtual void runComponent(T& component, sandbox::TaskContext* context) = 0;
 };
 
+template <typename T>
+class TypedRecursiveTask2 : public sandbox::Task {
+public:
+    void run(Entity& entity, TaskContext* context) {
+        startEntity(entity, context);
+
+        if (context) {
+            context->push();
+        }
+        const std::vector<Entity*>& entities = entity.getChildren();
+        for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++) {
+            (*it)->runTask(*this, context);
+        }
+
+        if (context) {
+            context->pop();
+        }
+
+        finishEntity(entity, context);
+    }
+
+    void startEntity(sandbox::Entity& entity, sandbox::TaskContext* context) {
+        using namespace sandbox;
+        const std::vector<Component*>& components = entity.getComponents();
+        for (std::vector<Component*>::const_iterator it = components.begin(); it != components.end(); it++) {
+            T* component = (*it)->asType<T>();
+            if (component) {
+                startComponent(*component, context);
+            }
+        }
+    }
+
+    void finishEntity(sandbox::Entity& entity, sandbox::TaskContext* context) {
+        using namespace sandbox;
+        const std::vector<Component*>& components = entity.getComponents();
+        for (std::vector<Component*>::const_reverse_iterator it = components.rbegin(); it != components.rend(); it++) {
+            T* component = (*it)->asType<T>();
+            if (component) {
+                finishComponent(*component, context);
+            }
+        }
+    }
+
+    virtual void startComponent(T& component, sandbox::TaskContext* context) = 0;
+    virtual void finishComponent(T& component, sandbox::TaskContext* context) = 0;
+};
+
 }
 
 #endif

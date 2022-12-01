@@ -72,88 +72,49 @@ int main(int argc, char *argv[]) {
                 window["width"].set<int>(700);
             Entity& triangle = display.addChild(new Entity("Triangle"));
                 triangle.addComponent(ec->components().create("OpenGLTest"));
-            Entity& cursor = display.addChild(new Entity("Cursor"));
-                cursor.addComponent(ec->components().create("GLFWCursorPosition"));
-                cursor.addComponent(new CursorPosition());
-            Entity& button = display.addChild(new Entity("Button"));
-                button.addComponent(ec->components().create("GLFWMouseButton"));
-                button.addComponent(new MouseButton());
+        Entity& display2 = root.addChild(new Entity("Display"));
+            Component& window2 = display2.addComponent(ec->components().create("GLFWWindow"));
+                window2["width"].set<int>(700);
+            Entity& triangle2 = display2.addChild(new Entity("Triangle"));
+                Component& t2 = triangle2.addComponent(ec->components().create("OpenGLTest"));
+                t2["dir"].set<bool>(false);
         Entity& geometry = root.addChild(new Entity("Geometry"));
             Entity& object = geometry.addChild(new Entity("Object"));
                 Component& mesh = object.addComponent(ec->components().create("AssimpMesh"));
                 mesh["filePath"].set<std::string>("../examples/app/data/models/monkey-head.obj");
-        Entity& images = root.addChild(new Entity("Images"));
-            Component& image = images.addComponent(ec->components().create("STBImageRGBA"));
-            image["filePath"].set<std::string>("../examples/app/data/images/img_test.png");
-        Entity& config = root.addChild(new Entity("Config"));
-            Component& jsonFile = config.addComponent(ec->components().create("PicoJsonFile"));
-            jsonFile["filePath"].set<std::string>("../examples/app/data/config/test.json");
-            Component& parsedTree = config.addComponent(ec->components().create("PicoJsonParsedTree"));
-            parsedTree["entity"].set<Entity*>(&display);
-
-        Entity webServer("WebServer");
-            Entity& webServer1 = webServer.addChild(new Entity("WebServer1"));
-                Component& ws = webServer1.addComponent(ec->components().create("CppWebServer"));
-                ws["port"].set<int>(8081);
-                ws["webDir"].set<std::string>("../examples/app/data/web");
-                Component& updateCmd = webServer1.addComponent(ec->components().create("WebCommandComponent"));
-                updateCmd["command"].set<std::string>("update");
-                webServer1.addComponent(new UpdateCommand(updateMutex));
-                webServer1.addComponent(new UpdateCommand(updateMutex));
-                //updateCmd.addCallback("command", new UpdateCommand());
-            Entity& webServer2 = webServer.addChild(new Entity("WebServer2"));
-                Component ws2 = webServer2.addComponent(ec->components().create("CppWebServer"));
-                ws2["port"].set<int>(8082);
-                ws2["webDir"].set<std::string>("../examples/app/data/web");
-            Entity& test = webServer.addChild(new Entity("Test"));
-                //test.addComponent(new PrintTest());
-
-        Entity& async = root.addChild(new Entity("Async"));
-            Component& wsUpdate = async.addComponent(ec->components().create("AsyncUpdate"));
-            wsUpdate["entity"].set<Entity*>(&webServer1);
-            Component& wsUpdate2 = async.addComponent(ec->components().create("AsyncUpdate"));
-            wsUpdate2["entity"].set<Entity*>(&webServer2);
-            Component& wsUpdate3 = async.addComponent(ec->components().create("AsyncUpdate"));
-            wsUpdate3["entity"].set<Entity*>(&test);
+        Entity& graphics = root.addChild(new Entity("Graphics"));
+            //graphics.addComponent(new renderer());
+            //graphics.addComponent(proxy(display));
     
     root.update();
 
-    root.deleteChild(&config);
 
     Task& print = *ec->tasks().create("PrintTask");
     root.runTask(print);
-
-    //Task& initContext = *ec->tasks().create("GLFWInitContext");
-    //root.runTask(initContext);
 
     Task& swapBuffers = *ec->tasks().create("GLFWSwapBuffers");
     Task& pollEvents = *ec->tasks().create("GLFWPollEvents");
     Task& makeCurrent = *ec->tasks().create("GLFWMakeCurrent");
     Task& init = *ec->tasks().create("OpenGLInit");
     Task& run = *ec->tasks().create("OpenGLRun");
+    Task& render = *ec->tasks().create("GLFWRender");
 
     root.runTask(makeCurrent);
-    root.runTask(init);
+    /*root.runTask(init);
     root.runTask(run);
     root.runTask(swapBuffers);
-    root.runTask(pollEvents);
-
-    //std::mutex* updateMutex = wsUpdate3["updateMutex"].get<std::mutex*>();
+    root.runTask(pollEvents);*/
 
     while (true) {
-        usleep(100000);
-        std::unique_lock<std::mutex> lock(updateMutex);
-        std::cout << "abc" << std::endl;
-        lock.unlock();
-
+        //usleep(100000);
+        /*
         root.runTask(makeCurrent);
         root.runTask(run);
         root.runTask(swapBuffers);
+        */
+        display.runTask(render);
+        display2.runTask(render);
         root.runTask(pollEvents);
-        //async.update();
-
-        //std::cout << window["width"].get<int>() << std::endl;
-        //std::cout << "step" << std::endl;
     }
 
     return 0;
