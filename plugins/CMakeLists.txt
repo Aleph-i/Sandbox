@@ -1,5 +1,6 @@
 add_subdirectory(test)
 add_subdirectory(glfw)
+add_subdirectory(glm)
 add_subdirectory(opengl)
 add_subdirectory(stb)
 add_subdirectory(assimp)

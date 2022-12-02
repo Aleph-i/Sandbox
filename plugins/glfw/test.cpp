@@ -100,7 +100,7 @@ private:
 
 class GLFWWindow : public sandbox::Component, public sandbox::Renderable {
 public:
-    GLFWWindow() : window(NULL), loaded(false) {
+    GLFWWindow() : window(NULL), loaded(false), mouseButton(NULL), cursorPosition(NULL) {
         addType<GLFWWindow>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<int>("width", width, 640));
@@ -154,7 +154,7 @@ public:
     void setCursorPosition(GLFWCursorPosition* cursorPosition) { this->cursorPosition = cursorPosition; }
     void setMouseButton(GLFWMouseButton* mouseButton) { this->mouseButton = mouseButton; }
 
-    void initContext(sandbox::RenderContext& context) {
+    void updateContext(sandbox::RenderContext& context) {
         context.addStack("width", new sandbox::TypedItemStack<int>());
         context.addStack("height", new sandbox::TypedItemStack<int>());
 
@@ -192,7 +192,9 @@ private:
 
     void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
         //std::cout << button << ", " << action << ", " << mods << std::endl;
-        mouseButton->updateButton(button, action, mods);
+        if (mouseButton) {
+            mouseButton->updateButton(button, action, mods);
+        }
     }
 
     static void glfw_size_callback(GLFWwindow* window, int width, int height) {
@@ -237,28 +239,6 @@ void GLFWMouseButton::update() {
     ComponentWithCallbacks::update();
 }
 
-
-/*class GLFWInitContext : public sandbox::TypedRecursiveTask<GLFWWindow> {
-public:
-    void runComponent(GLFWWindow& window, sandbox::TaskContext* context) {
-        window.init();
-    }
-};*/
-
-class GLFWSwapBuffers : public sandbox::TypedRecursiveTask<GLFWWindow> {
-public:
-    void runComponent(GLFWWindow& window, sandbox::TaskContext* context) {
-        window.swapBuffers();
-    }
-};
-
-class GLFWMakeCurrent : public sandbox::TypedRecursiveTask<GLFWWindow> {
-public:
-    void runComponent(GLFWWindow& window, sandbox::TaskContext* context) {
-        window.makeCurrent();
-    }
-};
-
 class GLFWPollEvents : public sandbox::Task {
 public:
     void run(sandbox::Entity& entity, sandbox::TaskContext* context) {
@@ -292,10 +272,7 @@ extern "C"
             ec->components().addType<GLFWWindow>("GLFWWindow");
             ec->components().addType<GLFWCursorPosition>("GLFWCursorPosition");
             ec->components().addType<GLFWMouseButton>("GLFWMouseButton");
-            //ec->tasks().addType<GLFWInitContext>("GLFWInitContext");
-            ec->tasks().addType<GLFWSwapBuffers>("GLFWSwapBuffers");
             ec->tasks().addType<GLFWPollEvents>("GLFWPollEvents");
-            ec->tasks().addType<GLFWMakeCurrent>("GLFWMakeCurrent");
             ec->tasks().addType<GLFWRender>("GLFWRender");
         }
 	}

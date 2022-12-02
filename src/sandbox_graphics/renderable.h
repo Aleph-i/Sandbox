@@ -19,7 +19,7 @@ public:
     }
 
     template <typename T>
-    void push(T& val) {
+    void push(T val) {
         static const std::type_info& type = typeid(T);
         pushValue(&val, type);
     }
@@ -153,10 +153,10 @@ public:
         if (!obj) {
             obj = createContextObject();
             context.addContextObject(this, obj);
-            initContext(context);
+            updateContext(context);
         }
     }
-    virtual void initContext(RenderContext& context) = 0;
+    virtual void updateContext(RenderContext& context) = 0;
     virtual void startRender(const RenderContext& context) = 0;
     virtual void finishRender(const RenderContext& context) = 0;
 };
@@ -174,12 +174,12 @@ public:
         return *static_cast<T*>(context.getContextObject(this));
     }
 
-    void initContext(RenderContext& context) { initContext(context, getContextObject(context)); }
+    void updateContext(RenderContext& context) { updateContext(context, getContextObject(context)); }
     void startRender(const RenderContext& context) { startRender(context, getContextObject(context)); }
     void finishRender(const RenderContext& context) { finishRender(context, getContextObject(context)); }
 
 protected:
-    virtual void initContext(const RenderContext& context, T& contextObject) = 0;
+    virtual void updateContext(const RenderContext& context, T& contextObject) = 0;
     virtual void startRender(const RenderContext& context, T& contextObject) = 0;
     virtual void finishRender(const RenderContext& context, T& contextObject) = 0;
 };

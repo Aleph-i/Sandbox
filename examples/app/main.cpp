@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
     pm.loadPlugin("lib/libassimp_sandbox.so");
     pm.loadPlugin("lib/libcppws_sandbox.so");
     pm.loadPlugin("lib/libpicojson_sandbox.so");
+    pm.loadPlugin("lib/libglm_sandbox.so");
     ec->components().addType<sandbox::AsyncUpdate>("AsyncUpdate");
 
     std::mutex updateMutex;
@@ -71,11 +72,13 @@ int main(int argc, char *argv[]) {
             Component& window = display.addComponent(ec->components().create("GLFWWindow"));
                 window["width"].set<int>(700);
             Entity& triangle = display.addChild(new Entity("Triangle"));
+                triangle.addComponent(ec->components().create("GlmCamera"));
                 triangle.addComponent(ec->components().create("OpenGLTest"));
         Entity& display2 = root.addChild(new Entity("Display"));
             Component& window2 = display2.addComponent(ec->components().create("GLFWWindow"));
                 window2["width"].set<int>(700);
             Entity& triangle2 = display2.addChild(new Entity("Triangle"));
+                triangle2.addComponent(ec->components().create("GlmCamera"));
                 Component& t2 = triangle2.addComponent(ec->components().create("OpenGLTest"));
                 t2["dir"].set<bool>(false);
         Entity& geometry = root.addChild(new Entity("Geometry"));
@@ -92,28 +95,14 @@ int main(int argc, char *argv[]) {
     Task& print = *ec->tasks().create("PrintTask");
     root.runTask(print);
 
-    Task& swapBuffers = *ec->tasks().create("GLFWSwapBuffers");
     Task& pollEvents = *ec->tasks().create("GLFWPollEvents");
-    Task& makeCurrent = *ec->tasks().create("GLFWMakeCurrent");
-    Task& init = *ec->tasks().create("OpenGLInit");
-    Task& run = *ec->tasks().create("OpenGLRun");
     Task& render = *ec->tasks().create("GLFWRender");
-
-    root.runTask(makeCurrent);
-    /*root.runTask(init);
-    root.runTask(run);
-    root.runTask(swapBuffers);
-    root.runTask(pollEvents);*/
+    Task& render2 = *ec->tasks().create("GLFWRender");
 
     while (true) {
         //usleep(100000);
-        /*
-        root.runTask(makeCurrent);
-        root.runTask(run);
-        root.runTask(swapBuffers);
-        */
         display.runTask(render);
-        display2.runTask(render);
+        display2.runTask(render2);
         root.runTask(pollEvents);
     }
 

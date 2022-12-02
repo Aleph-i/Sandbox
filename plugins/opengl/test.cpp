@@ -7,6 +7,11 @@
 
 #include "linmath.h"
 
+#include "glm/glm.hpp"
+#include <glm/gtc/matrix_access.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 typedef struct Vertex
 {
     vec3 pos;
@@ -94,12 +99,16 @@ public:
     }
 
     void run() {
+    }
 
-        
+    virtual void updateContext(sandbox::RenderContext& context) {
+        init();
+    }
+    virtual void startRender(const sandbox::RenderContext& context) {
         // NOTE: OpenGL error checks have been omitted for brevity
 
-        int width = 640;
-        int height = 480;
+        int width = context["width"].get<int>();
+        int height = context["height"].get<int>();
         const float ratio = width / (float) height;
 
         glViewport(0, 0, width, height);
@@ -113,21 +122,20 @@ public:
         mat4x4_ortho(p, -ratio, ratio, -1.f, 1.f, 1.f, -1.f);
         mat4x4_mul(mvp, p, m);
 
+        glm::mat4 model(1.0);
+        model = glm::rotate(model, (float) glfwGetTime()*(dir?1.0f:-1.0f), glm::vec3(0,0,1.0));
+        glm::mat4 view = context["viewMatrix"].get<glm::mat4>();
+        glm::mat4 proj = context["projectionMatrix"].get<glm::mat4>();
+        glm::mat4 modelViewProjection = proj*view*model;
+
         glUseProgram(program);
-        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &mvp);
+        //glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &mvp);
+        glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) glm::value_ptr(modelViewProjection));
         glBindVertexArray(vertex_array);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-  
     }
 
-    virtual void initContext(sandbox::RenderContext& context) {
-        init();
-    }
-    virtual void startRender(const sandbox::RenderContext& context) {
-        run();
-    }
     virtual void finishRender(const sandbox::RenderContext& context) {
-
     }
 
 private:
