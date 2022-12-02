@@ -10,16 +10,13 @@ public:
     GlmCamera() {
         addType<GlmCamera>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
+        t = 0.0;
     }
 
     ~GlmCamera() {}
 
     void update() {
-        view = glm::lookAt(
-		    glm::vec3(4,3,3), // Camera is at (4,3,3), in World Space
-		    glm::vec3(0,0,0), // and looks at the origin
-		    glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
-		    );
+
 
         //
         //view = glm::mat4(1.0);
@@ -31,6 +28,16 @@ public:
     }
 
     virtual void startRender(const sandbox::RenderContext& context) {
+        t+= 0.0001;
+        view = glm::lookAt(
+		    //glm::vec3(4*sin(t),3,3), // Camera is at (4,3,3), in World Space
+		    glm::vec3(4.0f,3,3), // Camera is at (4,3,3), in World Space
+		    glm::vec3(0,0,0), // and looks at the origin
+		    glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
+		    );
+
+        //view = glm::rotate(view, (float)t, glm::vec3(1.0, 0.0, 0.0));
+
         int width = context["width"].get<int>();
         int height = context["height"].get<int>();
         const float ratio = width / (float) height;
@@ -51,6 +58,7 @@ public:
 
 private:
     glm::mat4 view;
+    double t;
 };
 
 

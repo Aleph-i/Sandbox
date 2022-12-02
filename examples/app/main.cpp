@@ -68,26 +68,28 @@ int main(int argc, char *argv[]) {
     std::mutex updateMutex;
 
     Entity root("Root");
+        Entity& scene = root.addChild(new Entity("Scene"));
+            Entity& camera = scene.addChild(new Entity("Camera"));
+                Component& cam = camera.addComponent(ec->components().create("GlmCamera"));
         Entity& display = root.addChild(new Entity("Display"));
             Component& window = display.addComponent(ec->components().create("GLFWWindow"));
                 window["width"].set<int>(700);
             Entity& triangle = display.addChild(new Entity("Triangle"));
-                triangle.addComponent(ec->components().create("GlmCamera"));
+                triangle.addComponent(new ComponentProxy(&cam));
+                //triangle.addComponent(ec->components().create("GlmCamera"));
                 triangle.addComponent(ec->components().create("OpenGLTest"));
         Entity& display2 = root.addChild(new Entity("Display"));
             Component& window2 = display2.addComponent(ec->components().create("GLFWWindow"));
                 window2["width"].set<int>(700);
             Entity& triangle2 = display2.addChild(new Entity("Triangle"));
-                triangle2.addComponent(ec->components().create("GlmCamera"));
+                triangle2.addComponent(new ComponentProxy(&cam));
+                //triangle2.addComponent(ec->components().create("GlmCamera"));
                 Component& t2 = triangle2.addComponent(ec->components().create("OpenGLTest"));
                 t2["dir"].set<bool>(false);
         Entity& geometry = root.addChild(new Entity("Geometry"));
             Entity& object = geometry.addChild(new Entity("Object"));
                 Component& mesh = object.addComponent(ec->components().create("AssimpMesh"));
                 mesh["filePath"].set<std::string>("../examples/app/data/models/monkey-head.obj");
-        Entity& graphics = root.addChild(new Entity("Graphics"));
-            //graphics.addComponent(new renderer());
-            //graphics.addComponent(proxy(display));
     
     root.update();
 

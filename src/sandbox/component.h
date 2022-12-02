@@ -14,6 +14,7 @@ class Entity;
 
 class Component {
 friend class Entity;
+friend class ComponentProxy;
 public:
     Component() : entity(nullptr) {}
     virtual ~Component() {}
@@ -30,19 +31,21 @@ public:
 		static const std::type_info& type = typeid(T);
 		addType(type, ptr);
 	}
-	virtual const std::vector<const std::type_info*>& getTypes() { return types; }
 
     template <typename T>
 	T* asType() {
         static const std::type_info& type = typeid(T);
-        for (int i = 0; i < types.size(); i++) {
-            if (*types[i] == type) {
-                return static_cast<T*>(pointers[i]);
+        const std::vector<const std::type_info*>& componentTypes = getTypes();
+        for (int i = 0; i < componentTypes.size(); i++) {
+            if (*componentTypes[i] == type) {
+                return static_cast<T*>(getPointers()[i]);
             }	
         }
 
         return NULL;
 	}
+
+	virtual const std::vector<const std::type_info*>& getTypes() const { return types; }
 
     virtual Attribute& operator[](const std::string& name) {
         return *attributes[name];
@@ -60,6 +63,8 @@ protected:
 
     virtual void update() {}
 
+    virtual const std::vector<void*>& getPointers() const { return pointers; }
+
 private:
     void updateComponent();
     void setEntity(Entity& entity);
@@ -67,6 +72,28 @@ private:
     std::vector<const std::type_info*> types;
     std::vector<void*> pointers;
     std::map<std::string, Attribute*> attributes;
+};
+
+class ComponentProxy : public Component {
+public:
+    ComponentProxy(Component* component) : component(component) {}
+    virtual ~ComponentProxy() {}
+
+    virtual const std::vector<const std::type_info*>& getTypes() const { return component->getTypes(); }
+
+    virtual Attribute& operator[](const std::string& name) { return component->operator[](name); }
+
+protected:
+    virtual void addType(const std::type_info& type, void* ptr) {}
+
+    virtual void addAttribute(Attribute* attribute) {}
+
+    virtual void update() {}
+
+    virtual const std::vector<void*>& getPointers() const { return component->getPointers(); }
+
+private:
+    Component* component;
 };
 
 class CallbackComponent : public Component {
