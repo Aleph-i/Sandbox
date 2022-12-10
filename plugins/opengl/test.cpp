@@ -12,6 +12,200 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <fstream>
+#include <sstream>
+
+/*
+std::string instr = "";
+
+	std::ifstream fIn;
+	fIn.open(file->getPath().c_str(),std::ios::in);
+
+	if (fIn) {
+		std::stringstream ss;
+		ss << fIn.rdbuf();
+		fIn.close();
+
+		instr =  ss.str();
+	}
+    */
+
+/*
+	ifstream inFile(fileName, ios::in);
+	if (!inFile)
+	{
+		return fileName;
+	}
+
+	std::stringstream ss;
+	ss << inFile.rdbuf();
+	inFile.close();
+	return ss.str();
+*/
+
+struct OpenGLShaderData : public sandbox::ContextObject {
+    GLuint shader;
+};
+
+class OpenGLShader : public sandbox::Component, public sandbox::ContextRenderable<OpenGLShaderData> {
+public:
+    OpenGLShader() : isLoaded(false), shaderText("") {
+        addType<OpenGLShader>();
+        addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
+        addAttribute(new sandbox::TypedAttributeRef<std::string>("shaderText", shaderText));
+        addAttribute(new sandbox::TypedAttributeRef<std::string>("filePath", filePath));
+        addAttribute(new sandbox::TypedAttributeRef<std::string>("shaderType", shaderType));
+    }
+
+    void update() {
+        if (!isLoaded) {
+            if (shaderText.length() == 0 && filePath.length() > 0) {
+                std::ifstream inFile(filePath, std::ios::in);
+                std::stringstream ss;
+                ss << inFile.rdbuf();
+                inFile.close();
+                shaderText = ss.str();
+            }
+
+            if (shaderType == "vertex") {
+                type = GL_VERTEX_SHADER;
+            }
+            else if (shaderType == "fragment") {
+                type = GL_FRAGMENT_SHADER;
+            }
+
+            isLoaded = true;
+        }
+    }
+
+    void updateContext(sandbox::RenderContext& context, OpenGLShaderData& shaderData) {
+        shaderData.shader = glCreateShader(type);
+        const char* text = shaderText.c_str();
+        glShaderSource(shaderData.shader, 1, &text, NULL);
+        glCompileShader(shaderData.shader);
+        std::cout << "Shader id: " << shaderData.shader << std::endl;
+        std::cout << text << std::endl;
+    }
+
+    virtual void startRender(const sandbox::RenderContext& context, OpenGLShaderData& shaderData) {
+
+    }
+
+    virtual void finishRender(const sandbox::RenderContext& context, OpenGLShaderData& shaderData) {
+
+    }
+
+private:
+    bool isLoaded;
+    std::string filePath;
+    std::string shaderType;
+    std::string shaderText;
+    GLuint type;
+};
+
+struct OpenGLShaderProgramData : public sandbox::ContextObject {
+    GLuint program;
+};
+
+class OpenGLShaderProgram : public sandbox::Component, public sandbox::ContextRenderable<OpenGLShaderProgramData> {
+public:
+    OpenGLShaderProgram() : isLoaded(false) {
+        addType<OpenGLShaderProgram>();
+        addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
+    }
+
+    ~OpenGLShaderProgram() {
+    }
+
+    void update() {
+        if (!isLoaded) {
+            shaders = getEntity()->getComponents<OpenGLShader>();
+
+            isLoaded = true;
+        }
+    }
+
+    void test() {
+        std::cout << "Shader Prog" << " " << this << " " << static_cast<sandbox::Renderable*>(this) << " " << static_cast< sandbox::ContextRenderable<OpenGLShaderProgramData>* >(this) << std::endl;
+    }
+
+    void updateContext(sandbox::RenderContext& context, OpenGLShaderProgramData& shaderData) {
+        shaderData.program = glCreateProgram();
+        std::cout << "Shader Prog" << shaderData.program << " " << &shaderData << " " << &context << " " << this << std::endl;
+        std::cout << this << std::endl;
+        for (int i = 0; i < shaders.size(); i++) {
+            static_cast<sandbox::Renderable*>(shaders[i])->update(context);
+            std::cout << "Shader ID: " << shaders[i]->getContextObject(context).shader << std::endl;
+            glAttachShader(shaderData.program, shaders[i]->getContextObject(context).shader);
+        }
+
+        glLinkProgram(shaderData.program);
+
+        GLint mvp_location = glGetUniformLocation(shaderData.program, "MVP");
+        GLint vpos_location = glGetAttribLocation(shaderData.program, "vPos");
+        GLint vcol_location = glGetAttribLocation(shaderData.program, "vCol");
+
+        std::cout << "a " <<  mvp_location << std::endl;
+        std::cout << vpos_location << std::endl;
+        std::cout << vcol_location << std::endl;
+    }
+
+    virtual void startRender(const sandbox::RenderContext& context, OpenGLShaderProgramData& shaderData) {
+
+    }
+
+    virtual void finishRender(const sandbox::RenderContext& context, OpenGLShaderProgramData& shaderData) {
+
+    }
+
+private:
+    bool isLoaded;
+    std::vector<OpenGLShader*> shaders;
+};
+
+class OpenGLShaderCommand : public sandbox::Component, public sandbox::Renderable {
+public:
+    OpenGLShaderCommand() : isLoaded(false), shaderProgram(NULL) {
+        addType<OpenGLShaderCommand>();
+        addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
+        addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("shader", shader));
+    }
+
+    ~OpenGLShaderCommand() {
+    }
+
+    void update() {
+        if (!isLoaded) {
+            shaderProgram = shader->getComponent<OpenGLShaderProgram>();
+
+            isLoaded = true;
+        }
+    }
+
+    void updateContext(sandbox::RenderContext& context) {
+        static_cast<sandbox::Renderable*>(shaderProgram)->update(context);
+    }
+
+    virtual void startRender(const sandbox::RenderContext& context) {
+        //std::cout << "use shader" << std::endl;
+        glUseProgram(shaderProgram->getContextObject(context).program);
+        //shaderProgram->test();
+        //std::cout << shaderProgram->getContextObject(context).program << " " << &shaderProgram->getContextObject(context) << " " << &context << " " << shaderProgram << std::endl;
+        //std::cout << static_cast< sandbox::ContextRenderable<OpenGLShaderProgramData>* >(shaderProgram) << std::endl;
+        //exit(0);
+    }
+
+    virtual void finishRender(const sandbox::RenderContext& context) {
+        glUseProgram(0);
+        //std::cout << "release shader" << std::endl;
+    }
+
+private:
+    bool isLoaded;
+    sandbox::Entity* shader;
+    OpenGLShaderProgram* shaderProgram;
+};
+
 typedef struct Vertex
 {
     vec3 pos;
@@ -70,6 +264,9 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+
+        glGenVertexArrays(1, &vertex_array);
+
         vertex_shader = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
         glCompileShader(vertex_shader);
@@ -87,15 +284,11 @@ public:
         vpos_location = glGetAttribLocation(program, "vPos");
         vcol_location = glGetAttribLocation(program, "vCol");
 
-        //GLuint vertex_array;
-        glGenVertexArrays(1, &vertex_array);
-        glBindVertexArray(vertex_array);
-        glEnableVertexAttribArray(vpos_location);
-        glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
-                            sizeof(Vertex), (void*) offsetof(Vertex, pos));
-        glEnableVertexAttribArray(vcol_location);
-        glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-                            sizeof(Vertex), (void*) offsetof(Vertex, col));
+
+        std::cout << mvp_location << std::endl;
+        std::cout << vpos_location << std::endl;
+        std::cout << vcol_location << std::endl;
+
     }
 
     void run() {
@@ -128,11 +321,22 @@ public:
         glm::mat4 proj = context["projectionMatrix"].get<glm::mat4>();
         glm::mat4 modelViewProjection = proj*view*model;
 
-        glUseProgram(program);
+        //glUseProgram(program);
+
+        //GLuint vertex_array;
+        glBindVertexArray(vertex_array);
+        glEnableVertexAttribArray(vpos_location);
+        glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
+                            sizeof(Vertex), (void*) offsetof(Vertex, pos));
+        glEnableVertexAttribArray(vcol_location);
+        glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
+                            sizeof(Vertex), (void*) offsetof(Vertex, col));
+
         //glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &mvp);
         glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) glm::value_ptr(modelViewProjection));
         glBindVertexArray(vertex_array);
         glDrawArrays(GL_TRIANGLES, 0, 3);
+        //std::cout << "draw triangles" << std::endl;
     }
 
     virtual void finishRender(const sandbox::RenderContext& context) {
@@ -181,6 +385,9 @@ extern "C"
         EntityComponentInterface* ec = dynamic_cast<EntityComponentInterface*>(interface);
         if (ec) {
             ec->components().addType<OpenGLTest>("OpenGLTest");
+            ec->components().addType<OpenGLShaderProgram>("OpenGLShaderProgram");
+            ec->components().addType<OpenGLShader>("OpenGLShader");
+            ec->components().addType<OpenGLShaderCommand>("OpenGLShaderCommand");
             ec->tasks().addType<OpenGLInit>("OpenGLInit");
             ec->tasks().addType<OpenGLRun>("OpenGLRun");
         }

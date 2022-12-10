@@ -74,18 +74,30 @@ int main(int argc, char *argv[]) {
         Entity& display = root.addChild(new Entity("Display"));
             Component& window = display.addComponent(ec->components().create("GLFWWindow"));
                 window["width"].set<int>(700);
-            Entity& triangle = display.addChild(new Entity("Triangle"));
-                triangle.addComponent(new ComponentProxy(&cam));
-                //triangle.addComponent(ec->components().create("GlmCamera"));
-                triangle.addComponent(ec->components().create("OpenGLTest"));
-        Entity& display2 = root.addChild(new Entity("Display"));
+            Entity& shaders = display.addChild(new Entity("Shaders"));
+                Entity& simple = shaders.addChild(new Entity("Simple"));
+                    simple.addComponent(ec->components().create("OpenGLShaderProgram"));
+                    Component& vsh = simple.addComponent(ec->components().create("OpenGLShader"));
+                        vsh["shaderType"].set<std::string>("vertex"); 
+                        vsh["filePath"].set<std::string>("../examples/app/data/shaders/simple.vsh");
+                    Component& fsh = simple.addComponent(ec->components().create("OpenGLShader"));
+                        fsh["filePath"].set<std::string>("../examples/app/data/shaders/simple.fsh");
+                        fsh["shaderType"].set<std::string>("fragment");
+            Entity& commands = display.addChild(new Entity("Commands"));
+                Component& shaderCommand = commands.addComponent(ec->components().create("OpenGLShaderCommand"));
+                        shaderCommand["shader"].set<Entity*>(&simple);
+                Entity& triangle = commands.addChild(new Entity("Triangle"));
+                    triangle.addComponent(new ComponentProxy(&cam));
+                    //triangle.addComponent(ec->components().create("GlmCamera"));
+                    triangle.addComponent(ec->components().create("OpenGLTest"));
+        /*Entity& display2 = root.addChild(new Entity("Display"));
             Component& window2 = display2.addComponent(ec->components().create("GLFWWindow"));
                 window2["width"].set<int>(700);
             Entity& triangle2 = display2.addChild(new Entity("Triangle"));
                 triangle2.addComponent(new ComponentProxy(&cam));
                 //triangle2.addComponent(ec->components().create("GlmCamera"));
                 Component& t2 = triangle2.addComponent(ec->components().create("OpenGLTest"));
-                t2["dir"].set<bool>(false);
+                t2["dir"].set<bool>(false);*/
         Entity& geometry = root.addChild(new Entity("Geometry"));
             Entity& object = geometry.addChild(new Entity("Object"));
                 Component& mesh = object.addComponent(ec->components().create("AssimpMesh"));
@@ -104,7 +116,7 @@ int main(int argc, char *argv[]) {
     while (true) {
         //usleep(100000);
         display.runTask(render);
-        display2.runTask(render2);
+        //display2.runTask(render2);
         root.runTask(pollEvents);
     }
 

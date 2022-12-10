@@ -13,12 +13,13 @@ public:
     virtual ~Attribute() {}
     
     template <typename T>
-    T get() {
+    T& get() {
         static const std::type_info& type = typeid(T);
         if (type == getType()) {
             return *static_cast<T*>(getValue()); 
         }
-        return T();
+        static T defaultValue = T();
+        return defaultValue;
     }
 
     template <typename T>

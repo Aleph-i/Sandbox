@@ -105,7 +105,7 @@ public:
             delete it->second;
         }
 
-        for (std::map<Renderable*, ContextObject*>::iterator it = contextObjects.begin(); it != contextObjects.end(); it++) {
+        for (std::map<const Renderable*, ContextObject*>::iterator it = contextObjects.begin(); it != contextObjects.end(); it++) {
             delete it->second;
         }
     }
@@ -131,13 +131,13 @@ public:
         }
     }
 
-    void addContextObject(Renderable* renderable, ContextObject* obj);
+    void addContextObject(const Renderable* renderable, ContextObject* obj);
 
-    ContextObject* getContextObject(Renderable* renderable) const;
+    ContextObject* getContextObject(const Renderable* renderable) const;
 
 private:
     std::map<std::string, ItemStack*> itemStacks;
-    std::map<Renderable*, ContextObject*> contextObjects;
+    std::map<const Renderable*, ContextObject*> contextObjects;
 };
 
 class Renderable {
@@ -162,7 +162,7 @@ public:
 };
 
 template <typename T>
-class ContextRenderable {
+class ContextRenderable : public Renderable {
 public:
     virtual ~ContextRenderable() {}
 
@@ -170,7 +170,11 @@ public:
         return new T();
     }
 
-    T& getContextObject(const RenderContext& context) {
+    /*T& getContextObject(const RenderContext& context) {
+        return *static_cast<T*>(context.getContextObject(this));
+    }*/
+
+    T& getContextObject(const RenderContext& context) const {
         return *static_cast<T*>(context.getContextObject(this));
     }
 
@@ -179,17 +183,17 @@ public:
     void finishRender(const RenderContext& context) { finishRender(context, getContextObject(context)); }
 
 protected:
-    virtual void updateContext(const RenderContext& context, T& contextObject) = 0;
+    virtual void updateContext(RenderContext& context, T& contextObject) = 0;
     virtual void startRender(const RenderContext& context, T& contextObject) = 0;
     virtual void finishRender(const RenderContext& context, T& contextObject) = 0;
 };
 
-void RenderContext::addContextObject(Renderable* renderable, ContextObject* obj) {
+void RenderContext::addContextObject(const Renderable* renderable, ContextObject* obj) {
     contextObjects[renderable] = obj;
 }
 
-ContextObject* RenderContext::getContextObject(Renderable* renderable) const {
-        std::map<Renderable*, ContextObject*>::const_iterator it = contextObjects.find(renderable);
+ContextObject* RenderContext::getContextObject(const Renderable* renderable) const {
+        std::map<const Renderable*, ContextObject*>::const_iterator it = contextObjects.find(renderable);
         if (it != contextObjects.end()) {
             return it->second;
         }
