@@ -47,8 +47,22 @@ public:
 
 	virtual const std::vector<const std::type_info*>& getTypes() const { return types; }
 
-    virtual Attribute& operator[](const std::string& name) {
-        return *attributes[name];
+    virtual Attribute& operator[](const std::string& name) const {
+        std::map<std::string, Attribute*>::const_iterator it = attributes.find(name);
+        if (it != attributes.end()) {
+            return *(it->second);
+        }
+        else {
+            return NullAttribute::instance();
+        }
+    }
+
+    virtual const std::vector<Attribute*>& getAttributes() { return attributeList; }
+
+    template <typename T>
+    Component& setAttribute(const std::string& name, T val) {
+        (*this)[name].set<T>(val);
+        return *this;
     }
 
 protected:
@@ -59,6 +73,7 @@ protected:
 
     virtual void addAttribute(Attribute* attribute) {
         attributes[attribute->getName()] = attribute;
+        attributeList.push_back(attribute);
     }
 
     virtual void update() {}
@@ -72,6 +87,7 @@ private:
     std::vector<const std::type_info*> types;
     std::vector<void*> pointers;
     std::map<std::string, Attribute*> attributes;
+    std::vector<Attribute*> attributeList;
 };
 
 class ComponentProxy : public Component {
@@ -82,6 +98,8 @@ public:
     virtual const std::vector<const std::type_info*>& getTypes() const { return component->getTypes(); }
 
     virtual Attribute& operator[](const std::string& name) { return component->operator[](name); }
+
+    const std::vector<Attribute*>& getAttributes() { return component->getAttributes(); }
 
 protected:
     virtual void addType(const std::type_info& type, void* ptr) {}

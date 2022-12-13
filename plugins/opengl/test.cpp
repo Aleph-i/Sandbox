@@ -27,26 +27,74 @@ static const Vertex vertices[3] =
     { {   0.f,  0.6f, 0.0f }, { 0.f, 0.f, 1.f } }
 };
 
-static const char* vertex_shader_text =
-"#version 330\n"
-"uniform mat4 MVP;\n"
-"in vec3 vCol;\n"
-"in vec3 vPos;\n"
-"out vec3 color;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = MVP * vec4(vPos, 1.0);\n"
-"    color = vCol;\n"
-"}\n";
+struct GeometryArray {
+    int size;
+    const void* data;
+};
 
-static const char* fragment_shader_text =
-"#version 330\n"
-"in vec3 color;\n"
-"out vec4 fragment;\n"
-"void main()\n"
-"{\n"
-"    fragment = vec4(color, 1.0);\n"
-"}\n";
+class SimpleTriangle : public sandbox::Component {
+public:
+    SimpleTriangle() {
+        addType<SimpleTriangle>();
+        addAttribute(new sandbox::TypedAttributeRef<GeometryArray>("vertices", verts));
+    }
+
+    void update() {
+        verts.size = sizeof(vertices);
+        verts.data = vertices;
+    }
+
+    GeometryArray verts;
+};
+
+class OpenGLVertexBuffer : public sandbox::Component, public sandbox::ContextRenderable<OpenGLObject> {
+public:
+    OpenGLVertexBuffer() : isLoaded(false) {
+        addType<OpenGLVertexBuffer>();
+        addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
+        addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("mesh", mesh));
+        addAttribute(new sandbox::TypedAttributeRef<std::string>("arrayName", arrayName, "vertices"));
+    }
+
+    void update() {
+        if (!isLoaded) {
+            if (mesh) {
+                arr = (*mesh)[arrayName].get<GeometryArray>();
+
+                isLoaded = true;
+            }
+        }
+    }
+
+    void updateContext(sandbox::RenderContext& context, OpenGLObject& vertexBuffer) {
+        glGenBuffers(1, &vertexBuffer.id);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer.id);
+        glBufferData(GL_ARRAY_BUFFER, arr.size, arr.data, GL_STATIC_DRAW);
+    }
+
+    virtual void startRender(const sandbox::RenderContext& context, OpenGLObject& vertexBuffer) {
+    }
+
+    virtual void finishRender(const sandbox::RenderContext& context, OpenGLObject& vertexBuffer) {
+    }
+
+    sandbox::ContextObject* createContextObject() {
+        return new VertexBufferObject();
+    }
+
+private:
+    struct VertexBufferObject : public OpenGLObject {
+        virtual ~VertexBufferObject() {
+            glDeleteBuffers(1, &id);
+        }
+    };
+
+    bool isLoaded;
+    sandbox::Entity* mesh;
+    std::string arrayName;
+    GeometryArray arr;
+};
+
 
 static void error_callback(int error, const char* description)
 {
@@ -59,8 +107,10 @@ public:
         addType<OpenGLTest>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<bool>("dir", dir, true));
+        addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("mesh", mesh));
     }
     bool dir;
+    sandbox::Entity* mesh;
 
     ~OpenGLTest() {
     }
@@ -70,33 +120,12 @@ public:
         //GLuint vertex_buffer;
         glGenBuffers(1, &vertex_buffer);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        GeometryArray& arr = (*mesh)["vertices"].get<GeometryArray>();
+        glBufferData(GL_ARRAY_BUFFER, arr.size, arr.data, GL_STATIC_DRAW);
 
 
         glGenVertexArrays(1, &vertex_array);
-
-        vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-        glCompileShader(vertex_shader);
-
-        fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-        glCompileShader(fragment_shader);
-
-        program = glCreateProgram();
-        glAttachShader(program, vertex_shader);
-        glAttachShader(program, fragment_shader);
-        glLinkProgram(program);
-
-        mvp_location = glGetUniformLocation(program, "MVP");
-        vpos_location = glGetAttribLocation(program, "vPos");
-        vcol_location = glGetAttribLocation(program, "vCol");
-
-
-        std::cout << mvp_location << std::endl;
-        std::cout << vpos_location << std::endl;
-        std::cout << vcol_location << std::endl;
-
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
 
     void run() {
@@ -124,6 +153,7 @@ public:
         mat4x4_mul(mvp, p, m);
 
         glm::mat4 model(1.0);
+        model = glm::translate(model, glm::vec3(1,0,0)*sin((float) glfwGetTime()));
         model = glm::rotate(model, (float) glfwGetTime()*(dir?1.0f:-1.0f), glm::vec3(0,0,1.0));
         glm::mat4 view = context["viewMatrix"].get<glm::mat4>();
         glm::mat4 proj = context["projectionMatrix"].get<glm::mat4>();
@@ -131,14 +161,35 @@ public:
 
         //glUseProgram(program);
 
+        /*mvp_location = glGetUniformLocation(program, "MVP");
+        vpos_location = glGetAttribLocation(program, "vPos");
+        vcol_location = glGetAttribLocation(program, "vCol");*/
+
         //GLuint vertex_array;
-        glBindVertexArray(vertex_array);
-        glEnableVertexAttribArray(vpos_location);
-        glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
-                            sizeof(Vertex), (void*) offsetof(Vertex, pos));
-        glEnableVertexAttribArray(vcol_location);
-        glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
-                            sizeof(Vertex), (void*) offsetof(Vertex, col));
+        if (!loaded) {
+            OpenGLShaderProgram* prog = context["shaderProgram"].get<OpenGLShaderProgram*>();
+            program = prog->getContextObject(context).id;
+
+            mvp_location = prog->getUniformLocation("MVP");
+            vpos_location = prog->getAttribLocation("vPos");
+            vcol_location = prog->getAttribLocation("vCol");
+
+            glUseProgram(0);
+            glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+            glBindVertexArray(vertex_array);
+            glEnableVertexAttribArray(vpos_location);
+            glVertexAttribPointer(vpos_location, 3, GL_FLOAT, GL_FALSE,
+                                sizeof(Vertex), (void*) offsetof(Vertex, pos));
+            glEnableVertexAttribArray(vcol_location);
+            glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE,
+                                sizeof(Vertex), (void*) offsetof(Vertex, col));
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            glBindVertexArray(0);
+
+            glUseProgram(program);
+
+            loaded = true;
+        }
 
         //glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) &mvp);
         glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat*) glm::value_ptr(modelViewProjection));
@@ -153,6 +204,7 @@ public:
 private:
         GLuint vertex_buffer, vertex_shader, fragment_shader, program;
         GLint mvp_location, vpos_location, vcol_location;
+        bool loaded = false;
 
         GLuint vertex_array;
 };
@@ -168,6 +220,7 @@ extern "C"
             ec->components().addType<OpenGLShaderProgram>("OpenGLShaderProgram");
             ec->components().addType<OpenGLShader>("OpenGLShader");
             ec->components().addType<OpenGLShaderCommand>("OpenGLShaderCommand");
+            ec->components().addType<SimpleTriangle>("SimpleTriangle");
         }
 	}
 

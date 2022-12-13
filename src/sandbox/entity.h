@@ -47,6 +47,8 @@ public:
     Entity* getParent() const { return parent; }
     const std::string& getName() const { return name; }
 
+    Attribute& operator[](const std::string& name) const;
+
     void update();
 
     template <typename T>

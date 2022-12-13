@@ -78,7 +78,7 @@ private:
 
 class OpenGLShaderProgram : public sandbox::Component, public sandbox::ContextRenderable<OpenGLObject> {
 public:
-    OpenGLShaderProgram() : isLoaded(false) {
+    OpenGLShaderProgram() : isLoaded(false), attributesLoaded(false) {
         addType<OpenGLShaderProgram>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
     }
@@ -117,7 +117,7 @@ public:
         return true;
         */
 
-        if (true) { //checkProgramLinkStatus(shaderData.id)) {
+        if (!attributesLoaded) { //checkProgramLinkStatus(shaderData.id)) {
             GLint count;
             GLchar name[50];
             GLsizei length;
@@ -131,6 +131,7 @@ public:
                 glGetActiveAttrib(shaderData.id, f, 50, &length, &size, &type, name);
                 GLint loc = glGetAttribLocation(shaderData.id, name);
                 std::cout << name << " " << type << " " << loc << " " << size << std::endl;
+                attribLocations[name] = loc;
                 //ShaderParameter* param = new OpenGLShaderAttribute(name, type, loc, size);
                 //attributes.push_back(param);
             }
@@ -148,6 +149,7 @@ public:
                         n = ss.str();
                         GLint loc = glGetUniformLocation(shaderData.id, n.c_str());
                         std::cout << n << " " << type << " " << loc << " " << size << std::endl;
+                        uniformLocations[name] = loc;
                         //ShaderParameter* param = createParameter(n, type, loc, size);
                         //uniforms.push_back(param);
                         //uniformMap[n] = param;
@@ -156,7 +158,7 @@ public:
                 else {
                     GLint loc = glGetUniformLocation(shaderData.id, name);
                     std::cout << name << " " << type << " " << loc << " " << size << std::endl;
-                        
+                    uniformLocations[name] = loc;
                     //ShaderParameter* param = createParameter(name, type, loc, size);
                     //uniforms.push_back(param);
                     //uniformMap[param->getName()] = param;
@@ -171,6 +173,8 @@ public:
                 //uniforms.push_back(param);
                 //uniformMap[param->getName()] = param;
             }
+
+            attributesLoaded = true;
         }
     }
 
@@ -182,9 +186,39 @@ public:
 
     }
 
+    GLint getUniformLocation(const std::string& key) const {
+        std::map<std::string, GLint>::const_iterator it = uniformLocations.find(key);
+        if (it != uniformLocations.end()) {
+            return uniformLocations.find(key)->second;
+        }
+        return -1;
+    }
+    
+    GLint getAttribLocation(const std::string& key) const {
+        std::map<std::string, GLint>::const_iterator it = attribLocations.find(key);
+        if (it != attribLocations.end()) {
+            return attribLocations.find(key)->second;
+        }
+        return -1;
+    }
+
+    sandbox::ContextObject* createContextObject() {
+        return new ShaderProgramObject();
+    }
+
 private:
+    struct ShaderProgramObject : public OpenGLObject {
+        virtual ~ShaderProgramObject() {
+            glDeleteProgram(id);
+            std::cout << "Deleted shader program " << id << std::endl;
+        }
+    };
+
     bool isLoaded;
+    bool attributesLoaded;
     std::vector<OpenGLShader*> shaders;
+    std::map<std::string, GLint> uniformLocations;
+    std::map<std::string, GLint> attribLocations;
 };
 
 class OpenGLShaderCommand : public sandbox::Component, public sandbox::Renderable {

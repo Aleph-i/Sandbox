@@ -46,6 +46,31 @@ public:
     }
 };
 
+sandbox::Entity& createShader(sandbox::Entity& entity, const std::string& name, const std::string& vshPath, const std::string& fshPath, sandbox::EntityComponentInterface* ec) {
+    using namespace sandbox;
+
+    Entity& shader = entity.addChild(new Entity(name));
+        shader.addComponent(ec->components().create("OpenGLShaderProgram"));
+        Component& vsh = shader.addComponent(ec->components().create("OpenGLShader"));
+            vsh["shaderType"].set<std::string>("vertex"); 
+            vsh["filePath"].set<std::string>(vshPath);
+        Component& fsh = shader.addComponent(ec->components().create("OpenGLShader"));
+            fsh["filePath"].set<std::string>(fshPath);
+            fsh["shaderType"].set<std::string>("fragment");
+
+    return shader;
+}
+
+sandbox::Entity& createMesh(sandbox::Entity& entity, const std::string& name, const std::string& filePath, sandbox::EntityComponentInterface* ec) {
+    using namespace sandbox;
+
+    Entity& obj = entity.addChild(new Entity(name));
+        Component& mesh = obj.addComponent(ec->components().create("AssimpMesh"));
+            mesh["filePath"].set<std::string>("../examples/app/data/models/monkey-head.obj");
+
+    return obj;
+}
+
 
 int main(int argc, char *argv[]) {
     std::cout << "This is a test." << std::endl;
@@ -68,40 +93,29 @@ int main(int argc, char *argv[]) {
     std::mutex updateMutex;
 
     Entity root("Root");
+
+        Entity& geometry = root.addChild(new Entity("Geometry"));
+            Entity& object = createMesh(geometry, "Object", "../examples/app/data/models/monkey-head.obj", ec);
+            Entity& triangle = geometry.addChild(new Entity("Triangle"));
+                Component& tri = triangle.addComponent(ec->components().create("SimpleTriangle"));
+
         Entity& scene = root.addChild(new Entity("Scene"));
             Entity& camera = scene.addChild(new Entity("Camera"));
                 Component& cam = camera.addComponent(ec->components().create("GlmCamera"));
+
         Entity& display = root.addChild(new Entity("Display"));
-            Component& window = display.addComponent(ec->components().create("GLFWWindow"));
-                window["width"].set<int>(700);
+            Component& window = display.addComponent(ec->components().create("GLFWWindow"))
+                .setAttribute<int>("width", 700);
             Entity& shaders = display.addChild(new Entity("Shaders"));
-                Entity& simple = shaders.addChild(new Entity("Simple"));
-                    simple.addComponent(ec->components().create("OpenGLShaderProgram"));
-                    Component& vsh = simple.addComponent(ec->components().create("OpenGLShader"));
-                        vsh["shaderType"].set<std::string>("vertex"); 
-                        vsh["filePath"].set<std::string>("../examples/app/data/shaders/simple.vsh");
-                    Component& fsh = simple.addComponent(ec->components().create("OpenGLShader"));
-                        fsh["filePath"].set<std::string>("../examples/app/data/shaders/simple.fsh");
-                        fsh["shaderType"].set<std::string>("fragment");
+                Entity& simple = createShader(shaders, "Simple", "../examples/app/data/shaders/simple.vsh", "../examples/app/data/shaders/simple.fsh", ec);
+                Entity& complex = createShader(shaders, "Complex", "../examples/app/data/shaders/simple.vsh", "../examples/app/data/shaders/simple.fsh", ec);
             Entity& commands = display.addChild(new Entity("Commands"));
-                Component& shaderCommand = commands.addComponent(ec->components().create("OpenGLShaderCommand"));
-                        shaderCommand["shaderProgram"].set<Entity*>(&simple);
-                Entity& triangle = commands.addChild(new Entity("Triangle"));
-                    triangle.addComponent(new ComponentProxy(&cam));
-                    //triangle.addComponent(ec->components().create("GlmCamera"));
-                    triangle.addComponent(ec->components().create("OpenGLTest"));
-        /*Entity& display2 = root.addChild(new Entity("Display"));
-            Component& window2 = display2.addComponent(ec->components().create("GLFWWindow"));
-                window2["width"].set<int>(700);
-            Entity& triangle2 = display2.addChild(new Entity("Triangle"));
-                triangle2.addComponent(new ComponentProxy(&cam));
-                //triangle2.addComponent(ec->components().create("GlmCamera"));
-                Component& t2 = triangle2.addComponent(ec->components().create("OpenGLTest"));
-                t2["dir"].set<bool>(false);*/
-        Entity& geometry = root.addChild(new Entity("Geometry"));
-            Entity& object = geometry.addChild(new Entity("Object"));
-                Component& mesh = object.addComponent(ec->components().create("AssimpMesh"));
-                mesh["filePath"].set<std::string>("../examples/app/data/models/monkey-head.obj");
+                commands.addComponent(new ComponentProxy(&cam));
+                Component& shaderCommand = commands.addComponent(ec->components().create("OpenGLShaderCommand"))
+                    .setAttribute<Entity*>("shaderProgram", &simple);
+                Entity& triangle2 = commands.addChild(new Entity("Triangle"));
+                    triangle2.addComponent(ec->components().create("OpenGLTest")).setAttribute<Entity*>("mesh", &triangle);
+
     
     root.update();
 
@@ -111,7 +125,6 @@ int main(int argc, char *argv[]) {
 
     Task& pollEvents = *ec->tasks().create("GLFWPollEvents");
     Task& render = *ec->tasks().create("GLFWRender");
-    Task& render2 = *ec->tasks().create("GLFWRender");
 
     int count = 0;
 
@@ -121,11 +134,10 @@ int main(int argc, char *argv[]) {
         //display2.runTask(render2);
         root.runTask(pollEvents);
 
-        if (count == 60) {
-            simple.deleteComponent(&vsh);
+        /*if (count == 60) {
             shaders.deleteChild(&simple);
             commands.deleteComponent(&shaderCommand);
-        }
+        }*/
             //std::cout << count << std::endl;
 
         count++;

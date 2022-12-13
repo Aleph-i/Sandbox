@@ -77,6 +77,19 @@ void Entity::update() {
     }
 }
 
+Attribute& Entity::operator[](const std::string& name) const {
+    const std::vector<Component*>& components = getComponents();
+    for (std::vector<Component*>::const_iterator it= components.begin(); it != components.end(); it++) {
+        Attribute& att = (*it)->operator[](name);
+        if (&att != &NullAttribute::instance()) {
+            return att;
+        }
+    }
+
+
+    return NullAttribute::instance();
+}
+
 void RecursiveTask::run(Entity& entity, TaskContext* context) {
     runEntity(entity, context);
 

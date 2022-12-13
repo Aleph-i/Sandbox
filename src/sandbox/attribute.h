@@ -4,6 +4,7 @@
 #include <typeinfo>
 #include <vector>
 #include <string>
+#include <iostream>
 
 namespace sandbox {
 
@@ -19,6 +20,7 @@ public:
             return *static_cast<T*>(getValue()); 
         }
         static T defaultValue = T();
+        std::cout << "Returning default: " << name << std::endl;
         return defaultValue;
     }
 
@@ -43,6 +45,25 @@ protected:
     virtual void setValue(void* val) = 0;
     virtual const std::type_info& getType() = 0;
     std::string name;
+};
+
+class NullAttribute : public Attribute {
+private:
+    NullAttribute() : Attribute("") {}
+
+public:
+    static Attribute& instance() {
+        static NullAttribute nullAttribute;
+        return nullAttribute;
+    }
+
+protected:
+    virtual void* getValue() { return NULL; }
+    virtual void setValue(void* val) {}
+    virtual const std::type_info& getType() {
+        static const std::type_info& type = typeid(void*);
+        return type;
+    }
 };
 
 template <typename T>
