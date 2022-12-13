@@ -11,6 +11,8 @@ set (SOURCEFILES
 )
 
 set (HEADERFILES
+  opengl_object.h
+  shader/opengl_shader.h
   test.h
 )
 

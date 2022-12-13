@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
                         fsh["shaderType"].set<std::string>("fragment");
             Entity& commands = display.addChild(new Entity("Commands"));
                 Component& shaderCommand = commands.addComponent(ec->components().create("OpenGLShaderCommand"));
-                        shaderCommand["shader"].set<Entity*>(&simple);
+                        shaderCommand["shaderProgram"].set<Entity*>(&simple);
                 Entity& triangle = commands.addChild(new Entity("Triangle"));
                     triangle.addComponent(new ComponentProxy(&cam));
                     //triangle.addComponent(ec->components().create("GlmCamera"));
@@ -113,11 +113,22 @@ int main(int argc, char *argv[]) {
     Task& render = *ec->tasks().create("GLFWRender");
     Task& render2 = *ec->tasks().create("GLFWRender");
 
+    int count = 0;
+
     while (true) {
         //usleep(100000);
         display.runTask(render);
         //display2.runTask(render2);
         root.runTask(pollEvents);
+
+        if (count == 60) {
+            simple.deleteComponent(&vsh);
+            shaders.deleteChild(&simple);
+            commands.deleteComponent(&shaderCommand);
+        }
+            //std::cout << count << std::endl;
+
+        count++;
     }
 
     return 0;

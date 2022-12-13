@@ -93,9 +93,15 @@ protected:
 };
 
 class Renderable;
+
 class ContextObject {
 public:
+    ContextObject() : valid(true) {}
     virtual ~ContextObject() {}
+    virtual bool isValid() { return valid; }
+    virtual void setValid(bool valid) { this->valid = valid; }
+private:
+    bool valid;
 };
 
 class RenderContext {
@@ -135,6 +141,26 @@ public:
 
     ContextObject* getContextObject(const Renderable* renderable) const;
 
+    void invalidateObjects() {
+        for (std::map<const Renderable*, ContextObject*>::iterator it = contextObjects.begin(); it != contextObjects.end(); it++) {
+            it->second->setValid(false);
+        }
+    }
+
+    void purgeObjects() {
+        std::vector<const Renderable*> toBeDeleted;
+        for (std::map<const Renderable*, ContextObject*>::iterator it = contextObjects.begin(); it != contextObjects.end(); it++) {
+            if (!it->second->isValid()) {
+                toBeDeleted.push_back(it->first);
+                delete it->second;
+            }
+        }
+
+        for (int i = 0; i < toBeDeleted.size(); i++) {
+            contextObjects.erase(toBeDeleted[i]);
+        }
+    }
+
 private:
     std::map<std::string, ItemStack*> itemStacks;
     std::map<const Renderable*, ContextObject*> contextObjects;
@@ -155,6 +181,7 @@ public:
             context.addContextObject(this, obj);
             updateContext(context);
         }
+        obj->setValid(true);
     }
     virtual void updateContext(RenderContext& context) = 0;
     virtual void startRender(const RenderContext& context) = 0;

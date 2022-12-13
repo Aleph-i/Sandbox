@@ -246,7 +246,7 @@ public:
     }
 };
 
-class GLFWRender : public sandbox::TypedRecursiveTask2<sandbox::Renderable> {
+class GLFWRenderTask : public sandbox::TypedRecursiveTask2<sandbox::Renderable> {
 public:
     void startComponent(sandbox::Renderable& renderable, sandbox::TaskContext* context) {
         renderable.update(renderContext);
@@ -256,8 +256,23 @@ public:
         renderable.finishRender(renderContext);
     }
 
+    sandbox::RenderContext& getContext() { return renderContext; }
+
 private:
     sandbox::RenderContext renderContext;
+};
+
+class GLFWRender : public sandbox::Task {
+public:
+    void run(sandbox::Entity& entity, sandbox::TaskContext* context) {
+        sandbox::RenderContext& renderContext = renderTask.getContext();
+        renderContext.invalidateObjects();
+        renderTask.run(entity, context);
+        renderContext.purgeObjects();
+    }
+
+private:
+    GLFWRenderTask renderTask;
 };
 
 extern "C"
