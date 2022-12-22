@@ -114,7 +114,8 @@ int main(int argc, char *argv[]) {
                 Component& shaderCommand = commands.addComponent(ec->components().create("OpenGLShaderCommand"))
                     .setAttribute<Entity*>("shaderProgram", &simple);
                 Entity& triangle2 = commands.addChild(new Entity("Triangle"));
-                    triangle2.addComponent(ec->components().create("OpenGLTest")).setAttribute<Entity*>("mesh", &triangle);
+                    triangle2.addComponent(ec->components().create("OpenGLTest"))
+                        .setAttribute<Entity*>("mesh", &triangle);
 
     
     root.update();

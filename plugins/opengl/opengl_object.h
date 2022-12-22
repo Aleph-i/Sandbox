@@ -9,6 +9,7 @@
 
 struct OpenGLObject : public sandbox::ContextObject {
     OpenGLObject() : id(GL_NONE) {}
+    virtual ~OpenGLObject() {}
     GLuint id;
 };
 
