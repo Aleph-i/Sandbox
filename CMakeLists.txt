@@ -14,6 +14,7 @@ endif()
 include(${CMAKE_FRAMEWORK_DIR}/project/MainProject.cmake)
 
 add_subdirectory(src/sandbox)
+add_subdirectory(src/sandbox_geometry)
 add_subdirectory(src/sandbox_graphics)
 add_subdirectory(src/sandbox_threading)
 add_subdirectory(plugins)

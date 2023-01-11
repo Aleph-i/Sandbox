@@ -61,6 +61,10 @@ public:
                     std::cout << (*it)->getTypes()[i]->name();
                 }
                 std::cout << ")" << std::endl;
+
+                for (int i = 0; i < (*it)->getAttributes().size(); i++) {
+                    std::cout << printContext->get() << "\t" << " - " << (*it)->getAttributes()[i]->getName() << std::endl;
+                }
             }
         }
     }

@@ -6,6 +6,7 @@
 #include "sandbox/entity.h"
 #include <unistd.h>
 #include "sandbox_threading/async_update.h"
+#include "sandbox_geometry/mesh.h"
 
 class PrintTest : public sandbox::Component {
 public:
@@ -65,7 +66,7 @@ sandbox::Entity& createMesh(sandbox::Entity& entity, const std::string& name, co
     using namespace sandbox;
 
     Entity& obj = entity.addChild(new Entity(name));
-        Component& mesh = obj.addComponent(ec->components().create("AssimpMesh"));
+        Component& mesh = obj.addComponent(ec->components().create("AssimpMeshLoader"));
             mesh["filePath"].set<std::string>("../examples/app/data/models/monkey-head.obj");
 
     return obj;
@@ -120,6 +121,8 @@ int main(int argc, char *argv[]) {
     
     root.update();
 
+    std::vector<float>& pos = object.getChildren()[0]->getComponents()[0]->asType<sandbox::Mesh>()->getFloatArray("a");
+    std::cout << "pos " << pos[0] << ", " << pos[1] << ", " << pos[2] << std::endl;
 
     Task& print = *ec->tasks().create("PrintTask");
     root.runTask(print);

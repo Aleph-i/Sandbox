@@ -124,6 +124,18 @@ public:
     virtual void run(sandbox::Object& params, sandbox::Object& returnVal) = 0;
 };
 
+template <typename T, typename BASE>
+class ComponentWrapper : public Component {
+public:
+    ComponentWrapper() : val() {
+        addType<T>(&val);
+        addType<BASE>(&val);
+    }
+
+private:
+    T val;
+};
+
 }
 
 #endif

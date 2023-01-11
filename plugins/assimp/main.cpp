@@ -3,11 +3,35 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <sandbox_geometry/mesh.h>
 
-class AssimpMesh : public sandbox::Component {
+class AssimpMesh : public sandbox::Mesh {
 public:
-    AssimpMesh() : loaded(false) {
-        addType<AssimpMesh>();
+    AssimpMesh() {
+        std::vector<float> a;
+        a.push_back(1);
+        a.push_back(2);
+        a.push_back(3);
+        floatArrays.push_back(a);
+    }
+
+    std::vector<float>& getFloatArray(const std::string& name) {
+        return floatArrays[0];
+    }
+
+    std::vector<int>& getIntArray(const std::string& name) {
+        return intArrays[0];
+    }
+
+private:
+    std::vector< std::vector<float> > floatArrays;
+    std::vector< std::vector<int> > intArrays;
+};
+
+class AssimpMeshLoader : public sandbox::Component {
+public:
+    AssimpMeshLoader() : loaded(false) {
+        addType<AssimpMeshLoader>();
         addAttribute(new sandbox::TypedAttributeRef<std::string>("filePath", filePath));
     }
 
@@ -24,6 +48,17 @@ public:
 			}
 
 			std::cout << "Num meshes: " << scene->mNumMeshes << std::endl;
+
+            /*std::vector<float> a;
+            a.push_back(1);
+            a.push_back(2);
+            a.push_back(3);
+            //floatArrays.push_back(a);
+            addAttribute(new sandbox::TypedAttributeRef<std::vector<float>>("a", floatArrays[0]));*/
+
+            sandbox::Entity& mesh = getEntity()->addChild(new sandbox::Entity("Mesh"));
+            mesh.addComponent(new sandbox::ComponentWrapper<AssimpMesh, sandbox::Mesh>());
+
         }
     }
 
@@ -33,13 +68,14 @@ private:
 };
 
 
+
 extern "C"
 {
 	void registerInterface(sandbox::PluginInterface* interface) {
         using namespace sandbox;
         EntityComponentInterface* ec = dynamic_cast<EntityComponentInterface*>(interface);
         if (ec) {
-            ec->components().addType<AssimpMesh>("AssimpMesh");
+            ec->components().addType<AssimpMeshLoader>("AssimpMeshLoader");
         }
 	}
 }

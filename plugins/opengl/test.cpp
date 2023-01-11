@@ -209,6 +209,12 @@ private:
         GLuint vertex_array;
 };
 
+namespace sandbox::opengl {
+
+
+
+}
+
 extern "C"
 {
 	void registerInterface(sandbox::PluginInterface* interface) {
