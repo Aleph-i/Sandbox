@@ -22,7 +22,7 @@ std::string getDirectory(const std::string& filePath) {
 
 class PicoJsonFile : public sandbox::Component {
 public:
-    PicoJsonFile() : loaded(false) {
+    PicoJsonFile(const sandbox::ParameterSet& params) : loaded(false) {
         addType<PicoJsonFile>();
         addAttribute(new sandbox::TypedAttributeRef<std::string>("filePath", filePath));
     }
@@ -51,7 +51,7 @@ private:
 
 class PicoJsonParsedTree : public sandbox::Component {
 public:
-    PicoJsonParsedTree(sandbox::EntityComponentInterface* ec) : loaded(false), ec(ec), parentEntity(NULL) {
+    PicoJsonParsedTree(const sandbox::ParameterSet& params, sandbox::EntityComponentInterface* ec) : loaded(false), ec(ec), parentEntity(NULL) {
         addType<PicoJsonParsedTree>();
         addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("entity", parentEntity));
     }

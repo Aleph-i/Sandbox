@@ -77,7 +77,7 @@ private:
 
 class CppWebServer : public sandbox::Component {
 public:
-    CppWebServer() : webServer(NULL) {
+    CppWebServer(const sandbox::ParameterSet& params) : webServer(NULL) {
         addType<CppWebServer>();
         addAttribute(new sandbox::TypedAttributeRef<int>("port", port, 8081));
         addAttribute(new sandbox::TypedAttributeRef<std::string>("webDir", webDir, "."));
@@ -107,7 +107,7 @@ private:
 
 class WebCommandComponent : public sandbox::Component, public WebCommand {
 public:
-    WebCommandComponent() : loaded(false) {
+    WebCommandComponent(const sandbox::ParameterSet& params) : loaded(false) {
         addType<WebCommandComponent>();
         addType<WebCommand>(static_cast<WebCommand*>(this));
         addAttribute(new sandbox::TypedAttributeRef<std::string>("command", command));

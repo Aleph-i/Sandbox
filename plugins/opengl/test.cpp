@@ -34,7 +34,7 @@ struct GeometryArray {
 
 class SimpleTriangle : public sandbox::Component {
 public:
-    SimpleTriangle() {
+    SimpleTriangle(const sandbox::ParameterSet& params) {
         addType<SimpleTriangle>();
         addAttribute(new sandbox::TypedAttributeRef<GeometryArray>("vertices", verts));
     }
@@ -49,7 +49,7 @@ public:
 
 class OpenGLVertexBuffer : public sandbox::Component, public sandbox::ContextRenderable<OpenGLObject> {
 public:
-    OpenGLVertexBuffer() : isLoaded(false) {
+    OpenGLVertexBuffer(const sandbox::ParameterSet& params) : isLoaded(false) {
         addType<OpenGLVertexBuffer>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("mesh", mesh));
@@ -103,7 +103,7 @@ static void error_callback(int error, const char* description)
 
 class OpenGLTest: public sandbox::Component, public sandbox::Renderable {
 public:
-    OpenGLTest() {
+    OpenGLTest(const sandbox::ParameterSet& params) {
         addType<OpenGLTest>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<bool>("dir", dir, true));

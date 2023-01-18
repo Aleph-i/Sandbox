@@ -4,14 +4,14 @@
 
 class TestComponent : public sandbox::Component {
 public:
-    TestComponent() {
+    TestComponent(const sandbox::ParameterSet& params) {
         addType<TestComponent>();
     }
 };
 
 class ConsoleDisplay : public sandbox::Component { //, public sandbox::Renderable {
 public:
-    ConsoleDisplay() {
+    ConsoleDisplay(const sandbox::ParameterSet& params) {
         addType<ConsoleDisplay>();
         //addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
     }
@@ -27,6 +27,8 @@ public:
 
 class PrintTask : public sandbox::RecursiveTask {
 public:
+    PrintTask(const sandbox::ParameterSet& params) {}
+
     class PrintContext : public sandbox::TaskContext {
     public:
         PrintContext() {

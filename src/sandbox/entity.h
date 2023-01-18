@@ -4,30 +4,10 @@
 #include <vector>
 #include <string>
 #include "component.h"
+#include "task.h"
 
 namespace sandbox {
-
-class TaskContext {
-public:
-    virtual ~TaskContext() {}
-    virtual void push() {}
-    virtual void pop() {}
-};
-
-class Task {
-public:
-    virtual ~Task() {}
-    virtual void run(Entity& entity, TaskContext* context) = 0;
-    virtual TaskContext* createContext() { return NULL; }
-};
-
-class RecursiveTask : public Task {
-public:
-    virtual ~RecursiveTask() {}
-    virtual void run(Entity& entity, TaskContext* context);
-    virtual void runEntity(Entity& entity, TaskContext* context) = 0;
-};
-
+    
 class Entity {
 public:
     Entity(const std::string& name) : parent(nullptr), name(name) {}
@@ -41,6 +21,7 @@ public:
     void deleteChild(Entity* child);
     const std::vector<Entity*>& getChildren() const { return children; }
 
+    // TODO: Remove runTask(...)
     void runTask(Task& task);
     void runTask(Task& task, TaskContext* context);
 
@@ -92,25 +73,6 @@ public:
         return typedComponents;
     }
 
-/*    void addCallback(const std::string& name, ComponentCallback* callback) {
-        callbacks[name].push_back(callback);
-    }
-
-    void createCallback(const std::string& name) {
-        std::map<std::string, std::vector<ComponentCallback*> >::iterator it = callbacks.find(name);
-        if (it == callbacks.end()) {
-            callbacks[name] = std::vector<ComponentCallback*>();
-        }
-    }
-
-    void runCallback(const std::string& name, sandbox::Object& params, sandbox::Object& returnVal) {
-        std::vector<ComponentCallback*>& callbackList = callbacks[name];
-        for (int i = 0; i < callbackList.size(); i++) {
-            callbackList[i]->run(*this, params, returnVal);
-        }
-    }
-    */
-
 private:
     void removeComponent(Component* component);
     void removeChild(Entity* child);
@@ -120,7 +82,6 @@ private:
     std::vector<Entity*> children;
     Entity* parent;
     std::string name;
-    //std::map<std::string, std::vector<ComponentCallback*> > callbacks;
 };
 
 template <typename T>

@@ -7,7 +7,7 @@
 
 class GlmCamera : public sandbox::Component, public sandbox::Renderable {
 public:
-    GlmCamera() {
+    GlmCamera(const sandbox::ParameterSet& params) {
         addType<GlmCamera>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         t = 0.0;

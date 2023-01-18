@@ -53,7 +53,7 @@ private:
 
 class GLFWCursorPosition : public sandbox::ComponentWithCallbacks {
 public:
-    GLFWCursorPosition() : loaded(false){
+    GLFWCursorPosition(const sandbox::ParameterSet& params) : loaded(false){
         addType<GLFWCursorPosition>();
         obj.mapValue("x", x);
         obj.mapValue("y", y);
@@ -76,7 +76,7 @@ private:
 
 class GLFWMouseButton : public sandbox::ComponentWithCallbacks {
 public:
-    GLFWMouseButton() : loaded(false){
+    GLFWMouseButton(const sandbox::ParameterSet& params) : loaded(false){
         addType<GLFWMouseButton>();
         obj.mapValue("button", button);
         obj.mapValue("action", action);
@@ -100,7 +100,7 @@ private:
 
 class GLFWWindow : public sandbox::Component, public sandbox::Renderable {
 public:
-    GLFWWindow() : window(NULL), loaded(false), mouseButton(NULL), cursorPosition(NULL) {
+    GLFWWindow(const sandbox::ParameterSet& params) : window(NULL), loaded(false), mouseButton(NULL), cursorPosition(NULL) {
         addType<GLFWWindow>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<int>("width", width, 640));
@@ -241,6 +241,7 @@ void GLFWMouseButton::update() {
 
 class GLFWPollEvents : public sandbox::Task {
 public:
+    GLFWPollEvents(const sandbox::ParameterSet& params) {}
     void run(sandbox::Entity& entity, sandbox::TaskContext* context) {
         glfwPollEvents();
     }
@@ -264,6 +265,7 @@ private:
 
 class GLFWRender : public sandbox::Task {
 public:
+    GLFWRender(const sandbox::ParameterSet& params) {}
     void run(sandbox::Entity& entity, sandbox::TaskContext* context) {
         sandbox::RenderContext& renderContext = renderTask.getContext();
         renderContext.invalidateObjects();

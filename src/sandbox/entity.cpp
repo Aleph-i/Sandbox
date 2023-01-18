@@ -19,12 +19,14 @@ Component& Entity::addComponent(Component* component) {
     }
     component->setEntity(*this);
     components.push_back(component);
+    update();
     return *component;
 }
 
 void Entity::deleteComponent(Component* component) {
     removeComponent(component);
     delete component;
+    update();
 }
 
 void Entity::removeComponent(Component* component) {
@@ -32,6 +34,7 @@ void Entity::removeComponent(Component* component) {
     if (position != components.end()) {
         components.erase(position);
     }
+    update();
 }
 
 Entity& Entity::addChild(Entity* child) {
@@ -40,12 +43,14 @@ Entity& Entity::addChild(Entity* child) {
     }
     child->setParent(this);
     children.push_back(child);
+    update();
     return *child;
 }
 
 void Entity::deleteChild(Entity* child) {
     removeChild(child);
     delete child;
+    update();
 }
 
 void Entity::removeChild(Entity* child) {
@@ -53,6 +58,7 @@ void Entity::removeChild(Entity* child) {
     if (position != children.end()) {
         children.erase(position);
     }
+    update();
 }
 
 void Entity::runTask(Task& task) {
@@ -90,20 +96,5 @@ Attribute& Entity::operator[](const std::string& name) const {
     return NullAttribute::instance();
 }
 
-void RecursiveTask::run(Entity& entity, TaskContext* context) {
-    runEntity(entity, context);
-
-    if (context) {
-        context->push();
-    }
-    const std::vector<Entity*>& entities = entity.getChildren();
-    for (std::vector<Entity*>::const_iterator it = entities.begin(); it != entities.end(); it++) {
-        (*it)->runTask(*this, context);
-    }
-
-    if (context) {
-        context->pop();
-    }
-}
 
 }

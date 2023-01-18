@@ -7,7 +7,7 @@
 
 class STBImageRGBA : public sandbox::Component {
 public:
-    STBImageRGBA() : loaded(false) {
+    STBImageRGBA(const sandbox::ParameterSet& params) : loaded(false) {
         addType<STBImageRGBA>();
         addAttribute(new sandbox::TypedAttributeRef<std::string>("filePath", filePath));
         addAttribute(new sandbox::TypedAttributeRef<int>("width", width));

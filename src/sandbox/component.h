@@ -7,6 +7,7 @@
 #include <map>
 #include "attribute.h"
 #include "sandbox/object/object.h"
+#include "sandbox/parameter_set.h"
 
 namespace sandbox {
 
@@ -23,7 +24,8 @@ public:
     template<typename T>
 	void addType() {
 		static const std::type_info& type = typeid(T);
-		addType(type, this);
+        T* ptr = dynamic_cast<T*>(this);
+		addType(type, ptr);
 	}
 
     template<typename T>

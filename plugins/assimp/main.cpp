@@ -30,13 +30,13 @@ private:
 
 class AssimpMeshLoader : public sandbox::Component {
 public:
-    AssimpMeshLoader() : loaded(false) {
+    AssimpMeshLoader(const sandbox::ParameterSet& params) : loaded(false) {
         addType<AssimpMeshLoader>();
         addAttribute(new sandbox::TypedAttributeRef<std::string>("filePath", filePath));
     }
 
     void update() {
-        if (!loaded) {
+        if (!loaded && filePath.size() > 0) {
             loaded = true;
 
             Assimp::Importer importer;

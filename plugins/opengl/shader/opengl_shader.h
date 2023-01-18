@@ -12,7 +12,7 @@
 
 class OpenGLShader : public sandbox::Component, public sandbox::ContextRenderable<OpenGLObject> {
 public:
-    OpenGLShader() : isLoaded(false), shaderText("") {
+    OpenGLShader(const sandbox::ParameterSet& params) : isLoaded(false), shaderText("") {
         addType<OpenGLShader>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<std::string>("shaderText", shaderText));
@@ -78,7 +78,7 @@ private:
 
 class OpenGLShaderProgram : public sandbox::Component, public sandbox::ContextRenderable<OpenGLObject> {
 public:
-    OpenGLShaderProgram() : isLoaded(false), attributesLoaded(false) {
+    OpenGLShaderProgram(const sandbox::ParameterSet& params) : isLoaded(false), attributesLoaded(false) {
         addType<OpenGLShaderProgram>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
     }
@@ -223,7 +223,7 @@ private:
 
 class OpenGLShaderCommand : public sandbox::Component, public sandbox::Renderable {
 public:
-    OpenGLShaderCommand() : isLoaded(false), shaderProgram(NULL), prog(NULL) {
+    OpenGLShaderCommand(const sandbox::ParameterSet& params) : isLoaded(false), shaderProgram(NULL), prog(NULL) {
         addType<OpenGLShaderCommand>();
         addType<sandbox::Renderable>(static_cast<sandbox::Renderable*>(this));
         addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("shaderProgram", shaderProgram));

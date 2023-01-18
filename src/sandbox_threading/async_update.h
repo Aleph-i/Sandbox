@@ -11,7 +11,7 @@ namespace sandbox {
 
 class AsyncUpdate : public sandbox::Component {
 public:
-    AsyncUpdate() : running(true), updateThread(NULL), entity(NULL) {
+    AsyncUpdate(const sandbox::ParameterSet& params) : running(true), updateThread(NULL), entity(NULL) {
         addType<AsyncUpdate>();
         addAttribute(new sandbox::TypedAttributeRef<sandbox::Entity*>("entity", entity));
     }

@@ -2,6 +2,7 @@
 #define SANDBOX_FACTORY_OBJECT_FACTORY_H_
 
 #include <vector>
+#include "parameter_set.h"
 
 namespace sandbox {
 
@@ -9,7 +10,7 @@ template <typename BASE>
 class ObjectFactory {
 public:
     virtual ~ObjectFactory() {}
-    virtual BASE* create(const std::string& typeName) = 0;
+    virtual BASE* create(const std::string& typeName, const ParameterSet& parameterSet) = 0;
 };
 
 template <typename T, typename BASE>
@@ -17,9 +18,9 @@ class TypedObjectFactory : public ObjectFactory<BASE> {
 public:
     TypedObjectFactory(const std::string& typeName) : typeName(typeName) {}
     virtual ~TypedObjectFactory() {}
-    BASE* create(const std::string& typeName) { 
+    BASE* create(const std::string& typeName, const ParameterSet& parameterSet) { 
         if (typeName == this->typeName) {
-            return new T();
+            return new T(parameterSet);
         }
         else {
             return NULL;
@@ -34,9 +35,9 @@ class TypedObjectFactoryWithParam : public ObjectFactory<BASE> {
 public:
     TypedObjectFactoryWithParam(const std::string& typeName, PARAM p) : typeName(typeName), p(p) {}
     virtual ~TypedObjectFactoryWithParam() {}
-    BASE* create(const std::string& typeName) { 
+    BASE* create(const std::string& typeName, const ParameterSet& parameterSet) { 
         if (typeName == this->typeName) {
-            return new T(p);
+            return new T(parameterSet, p);
         }
         else {
             return NULL;
@@ -59,9 +60,13 @@ public:
     void addFactory(ObjectFactory<BASE>* factory) {
         factories.push_back(factory);
     }
-    virtual BASE* create(const std::string& typeName) {
+    BASE* create(const std::string& typeName) {
+        static ParameterSet params;
+        return create(typeName, params);
+    }
+    virtual BASE* create(const std::string& typeName, const ParameterSet& parameterSet) {
         for (int i = 0; i < factories.size(); i++) {
-            BASE* item = factories[i]->create(typeName);
+            BASE* item = factories[i]->create(typeName, parameterSet);
             if (item) {
                 return item;
             }
